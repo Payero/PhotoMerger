@@ -1,0 +1,5 @@
+bin/PhotoMerger.jar
+
+*.class
+.settings
+

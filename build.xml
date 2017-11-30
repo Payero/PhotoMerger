@@ -1,0 +1,208 @@
+<project name="Photo Merger" default="main" basedir=".">
+	<description>
+		Create a Java Project (JAR) with Ant build script
+	</description>
+
+	<property name="base.name" value="photo-merger" />
+
+  <!-- Determines whether to compile as 1.7 or 1.8 
+       It relies on having a link pointing to the rt.jar as follow:
+       /usr/java/jdk-${tgt.jdk}/jre/lib/rt.jar
+  -->
+  <property name="tgt.jdk" value="1.7" />
+
+	<!-- Java sources -->
+	<property name="src.dir" location="src" />
+
+  <!-- Where all the config files are -->
+  <property name="cfg.dir" location="config" />
+
+	<!-- Java classes directory -->
+	<property name="classes.dir" location="classes" />
+
+	<!-- Build directory -->
+	<property name="build.dir" location="build" />
+  
+  <!-- Java release directory -->
+  <property name="release.dir" location="lib" />
+
+	<!--Thirdparty jars/libaries -->
+	<property name="lib.dir" location="lib" />
+
+ 	<!--The location of the javadoc directory -->
+ 	<property name="doc.dir" location="docs" />
+	
+	<!--The location of the test directory -->
+	<property name="test.src.dir" location="src/com/axios/ccdp/test/unittest" />
+	<property name="test.bld.dir" location="${build.dir}/test" />
+	
+    <!--The location of the report directory for the unittests -->
+  <property name="report.dir" location="reports" />
+
+	<property name="config.file" 
+		value="${cfg.dir}/photo-merger-cfg.properties" />
+	
+	<path id="classpath">
+	  <fileset dir="${lib.dir}" includes="**/*.jar"/>
+  </path>
+	
+	<!-- ***************************************************************** -->
+	<!-- ****************  Start  Testing Targets (JUnit) **************** -->
+  	
+	<path id="classpath.test">
+	  <fileset dir="${lib.dir}" includes="**/*.jar"/>
+		<pathelement location="${build.dir}" />
+	</path>
+
+
+  <target name="test-compile" depends="compile">
+    <mkdir dir="${test.bld.dir}"/>
+  	<mkdir dir="${report.dir}"/>
+    <javac srcdir="${test.src.dir}" 
+    	   destdir="${test.bld.dir}" 
+         target="${tgt.jdk}"
+         source="${tgt.jdk}"
+         bootclasspath="/usr/java/jdk-${tgt.jdk}/jre/lib/rt.jar"
+         includeantruntime="false">
+    	<classpath refid="classpath.test"/>
+    </javac>
+  </target>
+
+
+	<!-- Runs all the unit tests by calling each one of the test target -->
+  <!-- NEED TO ADD UNITTESTS
+	<target name="test.all" 
+          depends="test.tasks.gen, test.aws.controller, test.amq.connection" />
+	 -->
+  <!-- Shows a message with the names of all the unitests available -->
+  <!-- NEED TO ADD UNITTESTS
+  <target name="which.test" 
+          description="Shows the names of all the unitests available">
+	  <echo message="The Tests available to run:" />
+		<echo message="    test.tasks.gen" />
+		<echo message="    test.aws.controller" />
+		<echo message="    test.amq.connection" />
+	</target>
+	-->
+
+
+	<!-- Runs all the unit tests generating Thread Requests -->
+  <!-- NEED TO ADD UNITTESTS
+	<target name="test.tasks.gen" depends="test-compile">
+		<antcall target="junit.testing">
+			<param name="test.pattern" value="ThreadRequestsGeneratorUnitTest" />
+		</antcall>
+	</target>
+  -->
+
+
+	<!-- Runs all the unit tests to the the AWS tasking controller interface -->
+  <!-- NEED TO ADD UNITTESTS
+	<target name="test.aws.controller" depends="test-compile">
+	  <antcall target="junit.testing">
+	    <param name="test.pattern" value="AWSControllerUnitTest" />
+	  </antcall>
+	</target>
+  -->
+
+  <!-- Runs all the unit tests to the the AWS tasking controller interface -->
+  <!-- NEED TO ADD UNITTESTS
+  <target name="test.amq.connection" depends="test-compile">
+	  <antcall target="junit.testing">
+	    <param name="test.pattern" value="AmqConnectionsUnitTest" />
+	  </antcall>
+	 </target>
+  -->
+
+	<!-- Runs all the unit tests based on the file name pattern to include -->
+  <target name="junit.testing" depends="test-compile">
+    <junit printsummary="yes" haltonfailure="no" fork="true">
+    	<sysproperty key="pm.config.file" 
+    		           value="${cfg.dir}/pm-config.properties" />
+    	
+        <classpath>
+          <path refid="classpath.test"/>
+          <pathelement location="${build.dir}"/>
+        </classpath>
+        <formatter type="brief" usefile="false" />
+        <batchtest todir="${report.dir}">
+        	<fileset dir="${src.dir}" includes="**/${test.pattern}.java" />
+            <!-- <fileset dir="${src.dir}" includes="**/*UnitTest.java" /> -->
+        </batchtest>
+    </junit>
+  </target>
+	
+	
+	
+	<!-- ******************  End  Testing Targets (JUnit) ***************** -->
+	<!-- ****************************************************************** -->
+	
+
+	<target name="compile" depends="" description="compiles the source ">
+    <mkdir dir="${build.dir}" />
+
+		<!-- Compile the java code from ${src.dir} into ${main.dir} -->
+		<javac includeantruntime="false" 
+				 debug="true"
+			   srcdir="${src.dir}" 
+			   destdir="${build.dir}" 
+         target="${tgt.jdk}"
+         source="${tgt.jdk}" 
+         bootclasspath="/usr/java/jdk-${tgt.jdk}/jre/lib/rt.jar"
+			   classpathref="classpath"/>
+	</target>
+
+
+  <!-- Generates the distro package for the ccdp-engine -->
+  <target name="create.jar" depends="clean,compile" 
+  	      description="Creates the photo-merger distribution package">
+  	<mkdir dir="${release.dir}" />  	
+  	
+  	<jar destfile="${release.dir}/${base.name}.jar" >
+      <manifest>
+        <attribute name="Main-Class" 
+                   value="oeg.photo_merger.gui.PhotoGUI"/>
+        <attribute name="Class-Path" 
+                   value="./oeg/" />
+
+      </manifest>
+      <fileset dir="${cfg.dir}" includes="*.properties" />
+    	<fileset dir="${build.dir}"/>
+
+      <zipgroupfileset dir="${lib.dir}" includes="*.jar" excludes="META-INF/*"/>
+    </jar>
+
+    <chmod file="${release.dir}/${base.name}.jar" perm="a+x"/>
+
+  </target>
+
+
+	<target name="clean" description="clean up">
+		<delete file="${release.dir}/${base.name}.jar" />
+    <delete dir="${build.dir}" />
+   	<delete dir="${doc.dir}" />
+		<delete dir="${report.dir}" />
+
+	</target>
+	
+
+  <!-- Generates the JavaDoc for the whole project -->
+  <target name="javadocs" depends="javadoc" 
+          description="Generates the JavaDoc for the whole project" />
+  <target name="javadoc" depends="compile" description="Generates JavaDoc">
+    <javadoc sourcepath="${src.dir}" 
+             destdir="${doc.dir}">
+      <classpath>
+        <fileset dir="${lib.dir}" includes="*.jar" />
+        
+      </classpath>
+    </javadoc>
+  </target>
+
+
+<!-- Default, run this -->
+<target name="main" depends="clean,compile,create.jar" 
+        description="Runs all the targets" />
+
+
+</project>

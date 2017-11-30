@@ -1,0 +1,32 @@
+#!/bin/bash
+
+
+# Getting the directory where is running
+PRG="$0"
+progname=`basename "$0"`
+saveddir=`pwd`
+
+# need this for relative symlinks
+dirname_prg=`dirname "$PRG"`
+cd $dirname_prg
+
+while [ -h "$PRG" ]; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '.*/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG=`dirname "$PRG"`"/$link"
+  fi
+done
+
+PM_HOME=`dirname "$PRG"`/..
+
+cd $saveddir
+
+#make it fully qualified
+PM_HOME=`cd "$PM_HOME" && pwd`
+
+
+java -jar ${PM_HOME}/lib/photo-merger.jar
+
