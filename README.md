@@ -30,6 +30,8 @@ directory.  It has the following features:
   such as the properties could not be retrieved
 * Displays a window with the name of the potential duplicate files for review 
   if desired
+* Allows you to see all the properties of a single file using the "Props. Viewer"
+  This feature is present even though it has not been tested that much 
 
 ## Build
 The project uses old school ant to build and create the jar file.  The jar file
@@ -68,4 +70,14 @@ The following widgets are found in the GUI once is launched:
 * **Avoid Duplicates:** Does not copy a file taken at the same time as other 
   files already in the list taken at the same time and having the same number
   of bytes (highly recommended).
-  
+* **Go:** Starts the merging and ordering process
+* **Reset:** Resets all the parameters and configurations to the default values
+* **Exit:** Exits the application
+* **Props. Viewer:** Opens another window and allows you to select a file to 
+  display all the different properties
+* **Clear:** Clears the text in the debug panel
+
+## Screenshots
+
+* **[Main Window]**(https://github.com/Payero/PhotoMerger/blob/master/MainWindow.png)
+* **[Props Viewer]**(https://github.com/Payero/PhotoMerger/blob/master/PropsViewer.png)
