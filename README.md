@@ -79,5 +79,5 @@ The following widgets are found in the GUI once is launched:
 
 ## Screenshots
 
-* **[Main Window]**(https://github.com/Payero/PhotoMerger/blob/master/MainWindow.png)
-* **[Props Viewer]**(https://github.com/Payero/PhotoMerger/blob/master/PropsViewer.png)
+* **[Main Window](https://github.com/Payero/PhotoMerger/blob/master/data/MainWindow.png)**
+* **[Props Viewer](https://github.com/Payero/PhotoMerger/blob/master/data/PropsViewer.png)**
