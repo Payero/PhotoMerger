@@ -22,6 +22,9 @@
 
 	<!-- Build directory -->
 	<property name="build.dir" location="build" />
+
+  <!-- Build directory -->
+  <property name="target.dir" location="${build.dir}/cls" />
   
   <!-- Java release directory -->
   <property name="release.dir" location="lib" />
@@ -139,37 +142,45 @@
 	
 
 	<target name="compile" depends="" description="compiles the source ">
-    <mkdir dir="${build.dir}" />
+    <mkdir dir="${target.dir}" />
 
 		<!-- Compile the java code from ${src.dir} into ${main.dir} -->
 		<javac includeantruntime="false" 
 				 debug="true"
 			   srcdir="${src.dir}" 
-			   destdir="${build.dir}" 
+			   destdir="${target.dir}" 
          target="${tgt.jdk}"
          source="${tgt.jdk}" 
          bootclasspath="/usr/java/jdk-${tgt.jdk}/jre/lib/rt.jar"
 			   classpathref="classpath"/>
 	</target>
 
+  <target name="unjar_dependencies" depends="clean">
+      <unzip dest="${target.dir}">
+          <fileset dir="${lib.dir}">
+              <include name="**/*.jar" />
+          </fileset>    
+      </unzip>
+  </target>
 
   <!-- Generates the distro package for the ccdp-engine -->
-  <target name="create.jar" depends="clean,compile" 
+  <target name="create.jar" depends="clean,compile, unjar_dependencies" 
   	      description="Creates the photo-merger distribution package">
   	<mkdir dir="${release.dir}" />  	
   	
-  	<jar destfile="${release.dir}/${base.name}.jar" >
+  	<jar  basedir="${target.dir}"
+          destfile="${release.dir}/${base.name}.jar" >
       <manifest>
         <attribute name="Main-Class" 
                    value="oeg.photo_merger.gui.PhotoGUI"/>
         <attribute name="Class-Path" 
-                   value="./oeg/" />
+                   value="./cls/" />
 
       </manifest>
       <fileset dir="${cfg.dir}" includes="*.properties" />
-    	<fileset dir="${build.dir}"/>
+    	<fileset dir="${target.dir}" excludes="META-INF/*" />
 
-      <zipgroupfileset dir="${lib.dir}" includes="*.jar" excludes="META-INF/*"/>
+      <!-- <zipgroupfileset dir="${lib.dir}" includes="*.jar" excludes="META-INF/*"/> -->
     </jar>
 
     <chmod file="${release.dir}/${base.name}.jar" perm="a+x"/>

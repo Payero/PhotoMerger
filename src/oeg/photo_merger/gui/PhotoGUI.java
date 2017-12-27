@@ -72,6 +72,7 @@ public class PhotoGUI extends JFrame
   /* Stores the default path to select directories */
   private String default_path = null;
   private JCheckBox useLastModChkBox = new JCheckBox("Use last modified date.");
+  private JCheckBox avoidDuplicatesChkBox = new JCheckBox("Avoid Duplicates.");
   private PhotoMergerHandler handler = null;
   
   /**
@@ -297,6 +298,15 @@ public class PhotoGUI extends JFrame
     controlsPanel.add(this.useLastModChkBox);
     
     /***********************************************************************
+     ************             Remove Duplicates                 ************
+     ***********************************************************************/
+    this.avoidDuplicatesChkBox.setToolTipText("Skips more than one file taken at the same time with the same size");
+    this.avoidDuplicatesChkBox.setBounds(500, 140, 200, 14);
+    this.avoidDuplicatesChkBox.setSelected(true);
+    controlsPanel.add(this.avoidDuplicatesChkBox);
+    
+    
+    /***********************************************************************
      ************           Go, Reset, Exit Buttons             ************
      ***********************************************************************/
     JButton btnGo = new JButton("Go");
@@ -422,6 +432,7 @@ public class PhotoGUI extends JFrame
         String indx = startIndx_textField.getText();
         String lvl = comboBox.getSelectedItem().toString();
         boolean useIt = useLastModChkBox.isSelected();
+        boolean remDup = avoidDuplicatesChkBox.isSelected();
         
         StringBuffer buf = new StringBuffer();
         buf.append("Input Directory ");
@@ -487,7 +498,7 @@ public class PhotoGUI extends JFrame
         {
           new PhotoMerger(inDir, outDir, mergeDir, startIndex, prefix, 
               (Level)comboBox.getSelectedItem(), 
-              new PhotoMergerHandler(dbgTextArea), useIt);
+              new PhotoMergerHandler(dbgTextArea), useIt, remDup);
           if( mergeDir == null || mergeDir.length() == 0 )
             showMessage("Files were renamed successfullly");
           else

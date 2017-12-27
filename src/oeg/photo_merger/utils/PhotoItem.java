@@ -31,6 +31,10 @@ public class PhotoItem implements Comparator<PhotoItem>, Comparable<PhotoItem>
    * renaming the file
    */
   private String extension = "";
+  /**
+   * Stores the size of the file in bytes
+   */
+  private long fileSize = 0l;
   
   /**
    * Empty constructor which sets the filename and the extension to an empty
@@ -41,6 +45,7 @@ public class PhotoItem implements Comparator<PhotoItem>, Comparable<PhotoItem>
     this.filename = "";
     this.dateTaken = null;
     this.extension = "";
+    this.fileSize = 0l;
   }
   
   /**
@@ -50,12 +55,14 @@ public class PhotoItem implements Comparator<PhotoItem>, Comparable<PhotoItem>
    * @param dateTaken the date when the picture was taken
    * @param extension the extension of the original file so it can be used 
    *        later when renaming the file
+   * @param size the size of the file in bytes
    */
-  public PhotoItem(String filename, Date dateTaken, String extension)
+  public PhotoItem(String filename, Date dateTaken, String extension, long size)
   {
     this.setFilename(filename);
     this.setDateTaken(dateTaken);
     this.setExtension(extension);
+    this.setFileSize(size);
   }
   
   /**
@@ -123,6 +130,26 @@ public class PhotoItem implements Comparator<PhotoItem>, Comparable<PhotoItem>
   }
   
   /**
+   * Sets the size of the file in bytes
+   * 
+   * @param size the size of the file in bytes
+   */
+  public void setFileSize(long size)
+  {
+    this.fileSize = size;
+  }
+  
+  /**
+   * Gets the size of the file in bytes
+   * 
+   * @return the size of the file in bytes
+   */
+  public long getFileSize()
+  {
+    return this.fileSize;
+  }
+  
+  /**
    * 
    * Compares the given item against the current object.  The comparison is
    * done based on when the date was taken and returns the following:
@@ -162,6 +189,35 @@ public class PhotoItem implements Comparator<PhotoItem>, Comparable<PhotoItem>
   }
   
   /**
+   * Returns true if the given object is an instance of PhotoItem, it was
+   * taken at the exact same time, and the file size contains the same number
+   * of bytes
+   * 
+   * @param obj the object to compare
+   */
+  @Override
+  public boolean equals(Object obj ) 
+  {
+    boolean same = false;
+    if( obj instanceof PhotoItem )
+    {
+      PhotoItem pi = (PhotoItem)obj;
+      Date d1 = pi.getDateTaken();
+      Date d2 = this.getDateTaken();
+      if( d1 == null || d2 == null )
+        return same;
+      
+      if( ( this.getDateTaken().compareTo( pi.getDateTaken() ) == 0  ) &&
+          ( this.getFileSize() == pi.getFileSize() ) )
+      {
+        same = true;
+      }
+    }
+    
+    return same;
+  }
+  
+  /**
    * Returns a string representation of the object.  The string is of the form:
    *    Picture: <filename>, Taken: <date taken>
    *    
@@ -176,6 +232,10 @@ public class PhotoItem implements Comparator<PhotoItem>, Comparable<PhotoItem>
     
     buffer.append("Taken: ");
     buffer.append(this.dateTaken.toString());
+    buffer.append(", ");
+    
+    buffer.append("FileSize: ");
+    buffer.append(this.fileSize);
     
     return buffer.toString();
   }

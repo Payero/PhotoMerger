@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -35,6 +36,8 @@ import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.mov.QuickTimeDirectory;
 import com.drew.metadata.mp4.Mp4Directory;
 
+import oeg.photo_merger.utils.ExifTool;
+import oeg.photo_merger.utils.ExifTool.Feature;
 import oeg.photo_merger.utils.PhotoItem;
 import oeg.photo_merger.utils.PhotoMergerUtils;
 
@@ -64,11 +67,41 @@ public class PhotoMerger
   private int startIndex = 1;
   /* The object used to print messages to the screen */
   private static Logger logger = null;
+  /**
+   * Stores a list of file names that could not be processed
+   */
   private List<String> failedExtr = new ArrayList<>();
-  private boolean useLastModDate = true;
-  // Parses the creation date used by QuickTime
+  /**
+   * Stores a list of file names that could not be processed
+   */
+  private List<String> dupFiles = new ArrayList<>();
+  /**
+   * Whether or not it should use the last modified date in case the actual 
+   * property of when it was taken can't be found
+   */
+  private boolean useLastModDate = false;
+  /**
+   * Whether or not to remove files taken at the exact same time with the exact
+   * size
+   */
+  private boolean avoidDups = true;
+  
+  /**
+   * Parses the creation date used by QuickTime
+   */
   private SimpleDateFormat qtFormatter = 
                           new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
+  /**
+   * Parses the creation date used by the ExifTool
+   */
+  private SimpleDateFormat exifFormatter = 
+                      new SimpleDateFormat("yyyy:MM:dd HH:mm:ssXXX");
+  
+  /**
+   * Stores the object to last attempt to parse an file.  Specially MTS files
+   * which are not currently recognized by the metadata-extractor library
+   */
+  private ExifTool exifTool = new ExifTool();
   
   /**
    * Runs the application using all the arguments given by the user.  If all
@@ -110,7 +143,8 @@ public class PhotoMerger
   public PhotoMerger(String inputDir, String outDir, String mergeDir, 
       int startIndx, String prefix, Level level, Handler handler)
   {
-    this(inputDir, outDir, mergeDir, startIndx, prefix, level, handler, true);
+    this(inputDir, outDir, mergeDir, startIndx, prefix, level, handler, 
+        false, true);
   }
 
   /**
@@ -130,10 +164,12 @@ public class PhotoMerger
    * @param handler The handler where the debug messages will be displayed
    * @param useLastModDate use the last modified date for files that it could
    *        not be retrieved
+   * @param avoidDup avoids copying more than one file with the same date taken
+   *        and the same file size
    */  
   public PhotoMerger(String inputDir, String outDir, String mergeDir, 
       int startIndx, String prefix, Level level, Handler handler, 
-      boolean useLastModDate)
+      boolean useLastModDate, boolean remDups)
   {
     logger = PhotoMergerUtils.getLogger(level, handler);
     
@@ -143,6 +179,7 @@ public class PhotoMerger
     this.setStartIndex(startIndx);
     this.setPrefix(prefix);
     this.useLastModifiedDate(useLastModDate);
+    this.removeDuplicates(remDups);
     
     this.processRequest();
   }
@@ -281,6 +318,29 @@ public class PhotoMerger
   }
 
   /**
+   * Sets the requirement to whether to copy files taken at the same time and
+   * that have the same size.
+   * 
+   * @param remDups flag indicating to copy duplicate files or not
+   */
+  public void removeDuplicates( boolean avoidDups )
+  {
+    this.avoidDups = avoidDups;
+  }
+  
+  /**
+   * Gets the flag to whether skip files taken at the same time and
+   * that have the same size.
+   * 
+   * @return true if the program is removing duplicates or false otherwise
+   */
+  public boolean removeDuplicates( )
+  {
+    return this.avoidDups;
+  }
+  
+  
+  /**
    * Gets the start index used to generate file names
    * 
    * @return the start index used to generate file names
@@ -341,7 +401,18 @@ public class PhotoMerger
         this.mergeItems(inItems, mergeItems);
       }
       
-      this.createAndShowSkippedFiles(this.failedExtr);
+      //Create and set up the window.
+      String title = this.failedExtr.size() + 
+                      " Metadata extraction failed, used regular date in:";
+      if( !this.useLastModDate )
+        title = "Metadata extraction failed, " + this.failedExtr.size() + " files skipped";
+
+      this.createAndShowSkippedFiles(title, this.failedExtr);
+      if( this.avoidDups )
+      {
+        title = this.dupFiles.size() +  " Duplicate Files Avoided";
+        this.createAndShowSkippedFiles(title, this.dupFiles);
+      }
 
     }
     catch(IOException ioe)
@@ -379,9 +450,13 @@ public class PhotoMerger
    * @throws IOException IOException is thrown if there is a problem accessing
    *         a file from either input sources
    */
-  private void renameItems(ArrayList<PhotoItem> inItems) throws IOException
+  private void renameItems(List<PhotoItem> inItems) throws IOException
   {
     logger.info("Renaming " + inItems.size() + " Items");
+    // If we need to remove duplicates, then do it before renaming files
+    if( this.avoidDups )
+      inItems = this.avoidDuplicates(inItems);
+    
     for(PhotoItem item: inItems)
     {
       String name = this.outputDir + this.prefix + "_" + 
@@ -398,6 +473,36 @@ public class PhotoMerger
         logger.warning("File " + item.getFilename() + " already exists");
       }
     }  
+  }
+  
+  /**
+   * Removes all the duplicates from the incoming list.  A duplicate is a media
+   * file taken at the same time and the file contains the same number of bytes
+   * 
+   * @param inItems the incoming list of items to compare
+   * @return a list of items without duplicate files
+   */
+  private List<PhotoItem> avoidDuplicates( List<PhotoItem> inItems )
+  {
+    logger.fine("Removing duplicates from list with " + inItems.size() + " items" );
+    List<PhotoItem> listToRet = new ArrayList<>();
+
+    for (PhotoItem item : inItems)
+    {
+      if( !listToRet.contains(item) )
+        listToRet.add(item);
+      else
+      {
+        int indx = listToRet.indexOf(item);
+        PhotoItem in = listToRet.get(indx);
+        String txt = "Files " + in.getFilename() + " and " + 
+                     item.getFilename() + " might be duplicates";
+        this.dupFiles.add( txt );
+      }
+    }
+    
+    logger.fine("Returning " + listToRet.size() + " items");
+    return listToRet;
   }
   
   /**
@@ -422,6 +527,7 @@ public class PhotoMerger
       for( File file : files )
       {
         Date date = null;
+        long size = file.length();
         
         String fname = file.getAbsolutePath();
         logger.info("Testing file: " + fname);
@@ -435,8 +541,10 @@ public class PhotoMerger
           {
             
             logger.info("Adding file to list");
+            File metafile = new File(fname);
+            
             Metadata metadata = 
-                ImageMetadataReader.readMetadata(new File(fname));
+                ImageMetadataReader.readMetadata( metafile );
             //this.printMetadata(metadata);
             
             Directory directory = null;
@@ -460,15 +568,20 @@ public class PhotoMerger
             // if we were able to extract the date, then we are done
             if( date != null )
             {
-              items.add(new PhotoItem(fname, date, ext));
+              items.add(new PhotoItem(fname, date, ext, size));
             }
             else
             {
+              date = this.getDateTimeOriginal(file);
+              if (date != null )
+              {
+                items.add(new PhotoItem(fname, date, ext, size));
+              }
               // could not get the date, using modified date?
-              if( this.useLastModDate )
+              else if( this.useLastModDate )
               {
                 date = new Date(file.lastModified());
-                items.add(new PhotoItem(fname, date, ext));
+                items.add(new PhotoItem(fname, date, ext, size));
               }
               else
               {
@@ -481,9 +594,14 @@ public class PhotoMerger
           {
             logger.warning("Error while processing: " + fname );
             
-            if( this.useLastModDate )
+            date = this.getDateTimeOriginal(file);
+            if( date != null )
             {
-              items.add(new PhotoItem(fname, date, ext));
+              items.add(new PhotoItem(fname, date, ext, size));
+            }
+            else if( this.useLastModDate )
+            {
+              items.add(new PhotoItem(fname, date, ext, size));
             }
             else
             {
@@ -502,6 +620,32 @@ public class PhotoMerger
     return items;
   }
 
+  /**
+   * Last desperate attempt to get the creation date.  This is used when the 
+   * metadata-extractor fails to get the date.
+   * 
+   * @param file the file to get the creation date
+   * @return the date when this file was created or null otherwise
+   */
+  private Date getDateTimeOriginal( File file )
+  {
+    Date date = null;
+    try
+    {
+      Map<ExifTool.Tag, String> map = 
+        this.exifTool.getImageMeta(file, ExifTool.Tag.DATE_TIME_ORIGINAL);
+      String str = map.get(ExifTool.Tag.DATE_TIME_ORIGINAL);
+      if( str.endsWith("DST") )
+        str = str.substring(0,  str.length() - 4);
+      date = this.exifFormatter.parse(str);
+    }
+    catch( Exception e )
+    {
+      logger.severe("Got an error " + e.getMessage());
+    }
+    return date;
+  }
+  
   /**
    * Gets a Date object formatted as Fri Sep 22 23:02:12 EDT 2017.  If the 
    * string cannot be parsed as a Date it returns null
@@ -531,16 +675,11 @@ public class PhotoMerger
    *   
    * @param skipped the list of files to add to the pop-up window
    */
-  private void createAndShowSkippedFiles(List<String> skipped) 
+  private void createAndShowSkippedFiles(String title, List<String> skipped) 
   {
     // if there are no failed files, just return
-    if( this.failedExtr.size() == 0 )
+    if( skipped.size() == 0 )
       return;
-    
-    //Create and set up the window.
-    String title = "Metadata extraction failed, used regular date in:";
-    if( !this.useLastModDate )
-      title = "Metadata extraction failed, " +"files skipped:";
     
     JFrame frame = new JFrame(title);
     frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
