@@ -574,41 +574,15 @@ public class PhotoMerger
             {
               date = this.getDateTimeOriginal(file);
               if (date != null )
-              {
                 items.add(new PhotoItem(fname, date, ext, size));
-              }
-              // could not get the date, using modified date?
-              else if( this.useLastModDate )
-              {
-                date = new Date(file.lastModified());
-                items.add(new PhotoItem(fname, date, ext, size));
-              }
-              else
-              {
-                logger.info("Skipping file " + fname);
-                this.failedExtr.add(fname);
-              } 
             }
           }
           catch (Exception e)
           {
             logger.warning("Error while processing: " + fname );
-            
             date = this.getDateTimeOriginal(file);
             if( date != null )
-            {
               items.add(new PhotoItem(fname, date, ext, size));
-            }
-            else if( this.useLastModDate )
-            {
-              items.add(new PhotoItem(fname, date, ext, size));
-            }
-            else
-            {
-              logger.info("Skipping file " + fname);
-              this.failedExtr.add(fname);
-              //e.printStackTrace();
-            }
           }
         }
       }
@@ -622,10 +596,14 @@ public class PhotoMerger
 
   /**
    * Last desperate attempt to get the creation date.  This is used when the 
-   * metadata-extractor fails to get the date.
+   * metadata-extractor fails to get the date.  It first uses the ExifTool to
+   * attempt to get the DATE_TIME_ORIGINAL or the date when the media was taken.
+   * If it cannot be done and the use last modified flag is set, then it uses
+   * that field from the file itself otherwise it returns null.
    * 
    * @param file the file to get the creation date
    * @return the date when this file was created or null otherwise
+   * 
    */
   private Date getDateTimeOriginal( File file )
   {
@@ -643,6 +621,18 @@ public class PhotoMerger
     {
       logger.severe("Got an error " + e.getMessage());
     }
+    
+    if (date == null && this.useLastModDate )
+    {
+      date = new Date(file.lastModified());
+    }
+    else
+    {
+      String fname = file.getAbsolutePath();
+      logger.info("Skipping file " + fname);
+      this.failedExtr.add(fname);
+    } 
+    
     return date;
   }
   

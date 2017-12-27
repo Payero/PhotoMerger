@@ -3,6 +3,8 @@ package test;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -26,11 +28,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.sound.midi.MidiDevice.Info;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
+import javax.swing.border.EmptyBorder;
 
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
@@ -52,16 +57,18 @@ import oeg.photo_merger.utils.ExifTool;
 import oeg.photo_merger.utils.ExifTool.Feature;
 import oeg.photo_merger.utils.ExifTool.Tag;
 import oeg.photo_merger.utils.PhotoItem;
+import oeg.photo_merger.utils.PhotoMergerHandler;
 import oeg.photo_merger.utils.PhotoMergerUtils;
 
 
-public class PhotoTest
+public class PhotoTest extends JFrame implements ActionListener
 {
   private Logger logger = Logger.getLogger(PhotoTest.class.getName());
   SimpleDateFormat qtFormatter = 
       new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
-
-  private List<String> dupFiles = new ArrayList<>();
+  
+  private JTextArea dbgTextArea;
+  private JButton button;
   
   private static Logger getLogger()
   {
@@ -77,6 +84,8 @@ public class PhotoTest
   
   public PhotoTest()
   {
+    super("Events Example");
+    
     this.logger = PhotoTest.getLogger();
     try
     {
@@ -89,58 +98,75 @@ public class PhotoTest
     }
   }
 
-  private void runTest() throws Exception
+  private void runTest() throws Exception 
   {
     this.logger.fine("Running the PhotoTest");
-    String path = "/home/oeg/Desktop/Sebastian/STREAM/00091.MTS";
-    ExifTool tool = new ExifTool(Feature.STAY_OPEN);
+    setLayout(new BorderLayout());
+    // creates the text area to display logger messages
+    this.dbgTextArea = new JTextArea();
+    dbgTextArea.setBackground(Color.LIGHT_GRAY);
+    dbgTextArea.setEditable(false);
+    dbgTextArea.setBounds(421, 5, 4, 22);
+    PhotoMergerHandler handler = new PhotoMergerHandler(dbgTextArea);
+    this.logger = PhotoMergerUtils.getLogger(handler);
+    this.logger.info("This is a test");
+    this.button = new JButton("Click Me");
+    this.button.addActionListener(this);
     
-    Map<Tag, String> valueMap = 
-      tool.getImageMeta(new File(path), ExifTool.Tag.CREATION_DATE, ExifTool.Tag.DATE_TIME_ORIGINAL);
-    this.logger.info("Creation Date " + valueMap.get(ExifTool.Tag.CREATION_DATE));
-    this.logger.info("Date Time Original " + valueMap.get(ExifTool.Tag.DATE_TIME_ORIGINAL));
-    
-//    
-//    try
-//    {
-//      
-//      logger.info("Adding file to list");
-//      File metafile = new File(path);
-//      
-//      Metadata metadata = 
-//          ImageMetadataReader.readMetadata( metafile );
-//      //this.printMetadata(metadata);
-//      
-//      Directory directory = null;
-//      Date date = null;
-//      if( metadata.containsDirectoryOfType(ExifSubIFDDirectory.class ) )
-//      {
-//        directory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
-//        date = directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
-//      }
-//      else if( metadata.containsDirectoryOfType(QuickTimeDirectory.class ) )
-//      {
-//        directory = metadata.getFirstDirectoryOfType(QuickTimeDirectory.class);
-//        date = directory.getDate(QuickTimeDirectory.TAG_CREATION_TIME);
-//      }
-//      else if( metadata.containsDirectoryOfType(Mp4Directory.class ) )
-//      {
-//        directory = metadata.getFirstDirectoryOfType(Mp4Directory.class);
-//        date = directory.getDate(Mp4Directory.TAG_CREATION_TIME);
-//      }
-//      
-//    }
-//    catch (Exception e)
-//    {
-//      System.err.println("Exception " + e.getMessage());
-//      e.printStackTrace();
-//      Map<Tag, String> map = 
-//          tool.getImageMeta(new File(path), ExifTool.Tag.DATE_TIME_ORIGINAL);
-//        this.logger.info("Date Time Original " + map.get(ExifTool.Tag.DATE_TIME_ORIGINAL));
-//        
-//    }
+    add(this.dbgTextArea, BorderLayout.CENTER);
+    add(this.button, BorderLayout.SOUTH);
+    setDefaultCloseOperation(EXIT_ON_CLOSE);
+    setSize(800, 600);
+    setVisible(true);
+    this.logger.info("Launching Thread");
+    Thread t = new Thread( new Worker(this.logger, this));
+    t.start();
+    this.logger.info("Done With it");
   }
-
+  public void sayBoo()
+  {
+    this.logger.fine("Boo!!");
+  }
+  
+  public void actionPerformed( ActionEvent evt )
+  {
+    this.logger.info("Event " + evt.getActionCommand());
+  }
+  public class Worker implements Runnable
+  {
+    private Logger logger = null;
+    private boolean done = false;
+    private PhotoTest test = null;
+    
+    public Worker( Logger logger, PhotoTest test )
+    {
+      this.logger = logger;
+      this.test = test;
+    }
+    
+    public void run()
+    {
+      try
+      {
+        while( !this.done )
+        {
+          this.logger.info("Writing Data at: " + new Date() );
+          Thread.sleep(1000);
+          this.test.sayBoo();
+        }
+      }
+      catch( Exception e )
+      {
+        this.logger.severe(e.getMessage());
+      }
+    }
+    
+    public void stopMe()
+    {
+      this.done = true;
+    }
+  }
+  
   
   public static void main(String[] args)
   {
