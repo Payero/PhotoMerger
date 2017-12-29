@@ -173,14 +173,14 @@ public class PhotoGUI extends JFrame
     /***********************************************************************
      ************             Input Directory                   ************
      ***********************************************************************/
-    JLabel lblInputDirectory = new JLabel("Input Directory");
+    JLabel lblInputDirectory = new JLabel("Order files from here");
     lblInputDirectory.setToolTipText("The directory to rename or merge all pictures");
-    lblInputDirectory.setBounds(10, 11, 109, 14);
+    lblInputDirectory.setBounds(10, 11, 150, 14);
     controlsPanel.add(lblInputDirectory);
     
     in_textField = new JTextField(inputDir);
     in_textField.setToolTipText("The directory to rename or merge all pictures");
-    in_textField.setBounds(129, 12, 237, 20);
+    in_textField.setBounds(179, 12, 237, 20);
     controlsPanel.add(in_textField);
     in_textField.setColumns(10);
     
@@ -198,21 +198,21 @@ public class PhotoGUI extends JFrame
         logger.info("Setting Input Directory to " + inputDir);
       }
     });
-    btnSelect.setBounds(376, 11, 89, 23);
+    btnSelect.setBounds(425, 11, 89, 23);
     controlsPanel.add(btnSelect);
     
     /***********************************************************************
      ************             Merge Directory                   ************
      ***********************************************************************/
-    JLabel lblMergeDirectory = new JLabel("Merge Directory");
+    JLabel lblMergeDirectory = new JLabel("And here (Optional)");
     lblMergeDirectory.setToolTipText("The directory of the pictures to merge");
-    lblMergeDirectory.setBounds(10, 43, 109, 14);
+    lblMergeDirectory.setBounds(10, 43, 150, 14);
     controlsPanel.add(lblMergeDirectory);
     
     merge_textField = new JTextField(mergeDir);
     merge_textField.setToolTipText("The directory of the pictures to merge");
     merge_textField.setColumns(10);
-    merge_textField.setBounds(129, 44, 237, 20);
+    merge_textField.setBounds(179, 44, 237, 20);
     controlsPanel.add(merge_textField);
     merge_textField.setText(mergeDir);
     
@@ -228,21 +228,21 @@ public class PhotoGUI extends JFrame
         logger.info("Setting Merge Directory to " + mergeDir);
       }
     });
-    button.setBounds(376, 43, 89, 23);
+    button.setBounds(425, 43, 89, 23);
     controlsPanel.add(button);
     
     /***********************************************************************
      ************             Output Directory                  ************
      ***********************************************************************/
-    JLabel lblOutputDirectory = new JLabel("Output Directory");
+    JLabel lblOutputDirectory = new JLabel("In Here..");
     lblOutputDirectory.setToolTipText("The directory where to store the pictures");
-    lblOutputDirectory.setBounds(10, 72, 109, 14);
+    lblOutputDirectory.setBounds(10, 72, 150, 14);
     controlsPanel.add(lblOutputDirectory);
     
     out_textField = new JTextField(outputDir);
     out_textField.setToolTipText("The directory where to store the pictures");
     out_textField.setColumns(10);
-    out_textField.setBounds(129, 73, 237, 20);
+    out_textField.setBounds(179, 73, 237, 20);
     controlsPanel.add(out_textField);
     
     JButton button_1 = new JButton("Select");
@@ -257,7 +257,7 @@ public class PhotoGUI extends JFrame
         logger.info("Setting Output Directory to " + outputDir);
       }
     });
-    button_1.setBounds(376, 72, 89, 23);
+    button_1.setBounds(425, 72, 89, 23);
     controlsPanel.add(button_1);
     
     /***********************************************************************
@@ -271,14 +271,14 @@ public class PhotoGUI extends JFrame
     prefix_textField = new JTextField(prefix);
     prefix_textField.setToolTipText("The prefix to use when generating the pictures name");
     prefix_textField.setColumns(10);
-    prefix_textField.setBounds(129, 104, 60, 20);
+    prefix_textField.setBounds(179, 104, 60, 20);
     controlsPanel.add(prefix_textField);
     
     startIndx_textField = 
         new JTextField( startIndx );
     startIndx_textField.setToolTipText("The index number to begin the sequence");
     startIndx_textField.setColumns(10);
-    startIndx_textField.setBounds(129, 135, 60, 20);
+    startIndx_textField.setBounds(179, 135, 60, 20);
     controlsPanel.add(startIndx_textField);
     
     /***********************************************************************
@@ -331,12 +331,12 @@ public class PhotoGUI extends JFrame
      ***********************************************************************/
     JLabel lblVerbosity = new JLabel("Verbosity");
     lblVerbosity.setToolTipText("How much output needs to be sent to the screen");
-    lblVerbosity.setBounds(305, 120, 56, 14);
+    lblVerbosity.setBounds(305, 120, 75, 14);
     controlsPanel.add(lblVerbosity);
     
     final JComboBox<Level> comboBox = new JComboBox<Level>();
     comboBox.setToolTipText("How much output needs to be sent to the screen");
-    comboBox.setBounds(375, 117, 90, 20);
+    comboBox.setBounds(425, 117, 90, 20);
     comboBox.addItem(Level.SEVERE);
     comboBox.addItem(Level.WARNING);
     comboBox.addItem(Level.INFO);
@@ -355,7 +355,7 @@ public class PhotoGUI extends JFrame
         dbgTextArea.setText("");
       }
     });
-    btnClearLog.setBounds(755, 170, 89, 23);
+    btnClearLog.setBounds(730, 170, 120, 23);
     
     JButton resetBtn = new JButton("Reset");
     resetBtn.setToolTipText("Resets all the inputs to their degfault values");
@@ -389,7 +389,7 @@ public class PhotoGUI extends JFrame
         });
       }
     });
-    btnPropsViewer.setBounds(625, 170, 120, 23);
+    btnPropsViewer.setBounds(570, 170, 150, 23);
     controlsPanel.add(btnPropsViewer);
     
     comboBox.addActionListener(new ActionListener()
