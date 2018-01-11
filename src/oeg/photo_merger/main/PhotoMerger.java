@@ -55,6 +55,10 @@ import oeg.photo_merger.utils.PhotoMergerUtils;
  */
 public class PhotoMerger
 {
+  /**
+   * What is the percentage difference on the file size if avoiding duplicates
+   */
+  public static int FILESIZE_PERCENT_DIFF = 1;
   /* The name of the input directory where the image files are located */
   private String inputDir = null;
   /* The name of the directory where the image files will be stored */
@@ -735,8 +739,8 @@ public class PhotoMerger
   public static void main(String[] args)
   {
     
-    new PhotoMerger("/home/oeg/TestPhotos/in", 
-        "/home/oeg/TestPhotos/out", 
+    new PhotoMerger("/home/oeg/1-img-test/in", 
+        "/home/oeg/1-img-test/out", 
         null, 
         1, "TST", Level.FINEST, new ConsoleHandler());
   }

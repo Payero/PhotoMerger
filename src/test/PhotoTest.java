@@ -53,6 +53,7 @@ import com.drew.metadata.mov.media.QuickTimeMediaDirectory;
 import com.drew.metadata.mov.metadata.QuickTimeMetadataDirectory;
 import com.drew.metadata.mp4.Mp4Directory;
 
+import oeg.photo_merger.main.PhotoMerger;
 import oeg.photo_merger.utils.ExifTool;
 import oeg.photo_merger.utils.ExifTool.Feature;
 import oeg.photo_merger.utils.ExifTool.Tag;
@@ -98,7 +99,24 @@ public class PhotoTest extends JFrame implements ActionListener
     }
   }
 
-  private void runTest() throws Exception 
+  private void runTest()
+  {
+    this.logger.info("Running test");
+    long n1 = 2076927;
+    long n2 = 2079596;
+    long avg = (n1 + n2 ) / 2;
+    this.logger.info("The average " + avg);
+    double val = ( PhotoMerger.FILESIZE_PERCENT_DIFF * avg ) / 100;
+    this.logger.info("The tolerance " + val);
+    long diff = Math.abs( (n1 - n2) );
+    this.logger.info("The difference " + diff);
+    if( diff <= val )
+      this.logger.info("They would be the same");
+    else
+      this.logger.info("They would have been different");
+  }
+  
+  private void guiTest() throws Exception 
   {
     this.logger.fine("Running the PhotoTest");
     setLayout(new BorderLayout());
@@ -132,6 +150,7 @@ public class PhotoTest extends JFrame implements ActionListener
   {
     this.logger.info("Event " + evt.getActionCommand());
   }
+  
   public class Worker implements Runnable
   {
     private Logger logger = null;

@@ -143,7 +143,7 @@ public class PhotoGUI extends JFrame
         }
     });
       
-    setTitle("Photo Merger");
+    setTitle("Photo Merger (Order files in chronological order)");
       
     this.setMinimumSize(new Dimension(890, 600));
     setBounds(100, 100, 882, 544);

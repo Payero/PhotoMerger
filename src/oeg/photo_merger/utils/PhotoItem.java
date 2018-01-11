@@ -4,6 +4,8 @@ import java.util.Comparator;
 
 import java.util.Date;
 
+import oeg.photo_merger.main.PhotoMerger;
+
 /**
  * Simple data container class used to store photo items.  Each PhotoItem object
  * contains the name of the file, the date the picture was taken and the 
@@ -202,16 +204,22 @@ public class PhotoItem implements Comparator<PhotoItem>, Comparable<PhotoItem>
     if( obj instanceof PhotoItem )
     {
       PhotoItem pi = (PhotoItem)obj;
+      long sz1 = pi.getFileSize();
+      long sz2 = this.getFileSize();
+      
+      // what is the acceptable size difference?  The same picture can have two
+      // different sizes based on OS and even compression programs
+      long avg = ( sz1 + sz2 ) / 2;
+      double tolerance = ( PhotoMerger.FILESIZE_PERCENT_DIFF * avg ) / 100;
+      double diff = Math.abs( sz1 - sz2 );
+      
       Date d1 = pi.getDateTaken();
       Date d2 = this.getDateTaken();
       if( d1 == null || d2 == null )
         return same;
-      
-      if( ( this.getDateTaken().compareTo( pi.getDateTaken() ) == 0  ) &&
-          ( this.getFileSize() == pi.getFileSize() ) )
-      {
+      // were taken the same day and the difference in size is acceptable
+      if( d2.compareTo( d1 ) == 0 && ( diff <= tolerance ) )
         same = true;
-      }
     }
     
     return same;
