@@ -73,6 +73,7 @@ public class PhotoGUI extends JFrame
   private String default_path = null;
   private JCheckBox useLastModChkBox = new JCheckBox("Use last modified date.");
   private JCheckBox avoidDuplicatesChkBox = new JCheckBox("Avoid Duplicates.");
+  private JTextField tolerance_textField;
   private PhotoMergerHandler handler = null;
   
   /**
@@ -113,6 +114,7 @@ public class PhotoGUI extends JFrame
     String prefix = cliMap.get("prefix");
     String startIndx = cliMap.get("start-index");
     String debugLvl = cliMap.get("debug-level");
+    double tolerance = PhotoMerger.FILESIZE_PERCENT_TOLERANCE;
     
     // creates the text area to display logger messages
     final JTextArea dbgTextArea = new JTextArea();
@@ -301,9 +303,26 @@ public class PhotoGUI extends JFrame
      ************             Remove Duplicates                 ************
      ***********************************************************************/
     this.avoidDuplicatesChkBox.setToolTipText("Skips more than one file taken at the same time with the same size");
-    this.avoidDuplicatesChkBox.setBounds(500, 140, 200, 14);
+    this.avoidDuplicatesChkBox.setBounds(500, 140, 150, 14);
     this.avoidDuplicatesChkBox.setSelected(true);
     controlsPanel.add(this.avoidDuplicatesChkBox);
+    
+    /***********************************************************************
+     ************               Tolerance                    ************
+     ***********************************************************************/
+    JLabel lblTolerance = new JLabel("Tolerance (%)");
+    String tip = "% difference in file size flag files as duplicates.  " +
+                 "Greater % might remove pictures taken in rapid shutter mode";
+    lblTolerance.setToolTipText(tip);
+    
+    lblTolerance.setBounds(660, 140, 100, 14);
+    controlsPanel.add(lblTolerance);
+    
+    tolerance_textField = new JTextField( Double.toString(tolerance) );
+    tolerance_textField.setToolTipText(tip);
+    tolerance_textField.setColumns(4);
+    tolerance_textField.setBounds(760, 140, 50, 14);
+    controlsPanel.add(tolerance_textField);
     
     
     /***********************************************************************
@@ -433,7 +452,21 @@ public class PhotoGUI extends JFrame
         String lvl = comboBox.getSelectedItem().toString();
         boolean useIt = useLastModChkBox.isSelected();
         boolean remDup = avoidDuplicatesChkBox.isSelected();
-        
+        try
+        {
+          double tolerance = Double.parseDouble( tolerance_textField.getText() );
+          if( tolerance < 0 || tolerance > 100 )
+            throw new Exception();
+          logger.info("Setting the Tolerance to " + tolerance + " %");
+          PhotoMerger.FILESIZE_PERCENT_TOLERANCE = tolerance;
+        }
+        catch( Exception ex )
+        {
+          JOptionPane.showMessageDialog(null,  
+                              "The Tolerance needs to be a positive number", 
+                              "Invalid Tolerance", JOptionPane.ERROR_MESSAGE);
+          return;
+        }
         StringBuffer buf = new StringBuffer();
         buf.append("Input Directory ");
         buf.append( inDir );

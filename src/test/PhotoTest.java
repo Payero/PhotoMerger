@@ -106,7 +106,7 @@ public class PhotoTest extends JFrame implements ActionListener
     long n2 = 2079596;
     long avg = (n1 + n2 ) / 2;
     this.logger.info("The average " + avg);
-    double val = ( PhotoMerger.FILESIZE_PERCENT_DIFF * avg ) / 100;
+    double val = ( PhotoMerger.FILESIZE_PERCENT_TOLERANCE * avg ) / 100;
     this.logger.info("The tolerance " + val);
     long diff = Math.abs( (n1 - n2) );
     this.logger.info("The difference " + diff);

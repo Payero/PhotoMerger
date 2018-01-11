@@ -210,7 +210,7 @@ public class PhotoItem implements Comparator<PhotoItem>, Comparable<PhotoItem>
       // what is the acceptable size difference?  The same picture can have two
       // different sizes based on OS and even compression programs
       long avg = ( sz1 + sz2 ) / 2;
-      double tolerance = ( PhotoMerger.FILESIZE_PERCENT_DIFF * avg ) / 100;
+      double tolerance = ( PhotoMerger.FILESIZE_PERCENT_TOLERANCE * avg ) / 100;
       double diff = Math.abs( sz1 - sz2 );
       
       Date d1 = pi.getDateTaken();
