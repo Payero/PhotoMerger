@@ -26,6 +26,7 @@ directory.  It has the following features:
   one of the current files in the list and has the exact same size
 * If the properties of the media file cannot be retrieved and the flag to use
   the file's last modified date is set, then it uses that for the ordering
+* Creates year-month directories to store the files based on when the picture was taken 
 * Displays a window with all the files that could not be merged due to problems 
   such as the properties could not be retrieved
 * Displays a window with the name of the potential duplicate files for review 
