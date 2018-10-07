@@ -39,6 +39,7 @@ import com.drew.metadata.mp4.Mp4Directory;
 import oeg.photo_merger.utils.ExifTool;
 import oeg.photo_merger.utils.ExifTool.Feature;
 import oeg.photo_merger.utils.PhotoItem;
+import oeg.photo_merger.utils.PhotoMergerHandler;
 import oeg.photo_merger.utils.PhotoMergerUtils;
 
 /**
@@ -89,6 +90,11 @@ public class PhotoMerger
    * size
    */
   private boolean avoidDups = true;
+  /**
+   * Whether or not to create monthly directories based on when the picture was
+   * created
+   */
+  private boolean makeMonthlyDirs = true;
   
   /**
    * Parses the creation date used by QuickTime
@@ -100,7 +106,11 @@ public class PhotoMerger
    */
   private SimpleDateFormat exifFormatter = 
                       new SimpleDateFormat("yyyy:MM:dd HH:mm:ssXXX");
-  
+  /**
+   * Parses the date from a PhotoItem to create directories yyyy-MM
+   */
+  private SimpleDateFormat folderFormatter = 
+                      new SimpleDateFormat("yyyy-MM");
   /**
    * Stores the object to last attempt to parse an file.  Specially MTS files
    * which are not currently recognized by the metadata-extractor library
@@ -148,7 +158,7 @@ public class PhotoMerger
       int startIndx, String prefix, Level level, Handler handler)
   {
     this(inputDir, outDir, mergeDir, startIndx, prefix, level, handler, 
-        false, true);
+        false, true, true);
   }
 
   /**
@@ -170,22 +180,33 @@ public class PhotoMerger
    *        not be retrieved
    * @param avoidDup avoids copying more than one file with the same date taken
    *        and the same file size
+   * @param mkDirs makes year/monthly directories based on the pictures date
+   * 
    */  
   public PhotoMerger(String inputDir, String outDir, String mergeDir, 
       int startIndx, String prefix, Level level, Handler handler, 
-      boolean useLastModDate, boolean remDups)
+      boolean useLastModDate, boolean remDups, boolean mkDirs)
   {
     logger = PhotoMergerUtils.getLogger(level, handler);
     
-    this.setInputDir(inputDir);
-    this.setOutputDir(outDir);
-    this.setMergeDir(mergeDir);
-    this.setStartIndex(startIndx);
-    this.setPrefix(prefix);
-    this.useLastModifiedDate(useLastModDate);
-    this.removeDuplicates(remDups);
-    
-    this.processRequest();
+    try
+    {
+      this.setInputDir(inputDir);
+      this.setOutputDir(outDir);
+      this.setMergeDir(mergeDir);
+      this.setStartIndex(startIndx);
+      this.setPrefix(prefix);
+      this.useLastModifiedDate(useLastModDate);
+      this.removeDuplicates(remDups);
+      this.makeMonthlyDirectories(mkDirs);
+      
+      this.processRequest();
+    }
+    catch( IOException e)
+    {
+      logger.severe(e.getMessage());
+      e.printStackTrace();
+    }
   }
   
   /**
@@ -225,7 +246,7 @@ public class PhotoMerger
    * 
    * @param outptuDir the selected output directory
    */
-  public void setOutputDir(String outputDir)
+  public void setOutputDir(String outputDir) throws IOException
   {
     logger.fine("Setting Output to " + outputDir);
     if( outputDir == null || outputDir.length() == 0 )
@@ -236,10 +257,12 @@ public class PhotoMerger
     else
     {
       logger.info("Setting output directory to " + outputDir);
-      if( this.testDirectory(outputDir ) )
+//      if( this.testDirectory(outputDir ) )
         this.outputDir = outputDir;
     }
     // appends the directory separator if not present
+    Files.createDirectories(Paths.get(this.outputDir));
+    
     if( !this.outputDir.endsWith(File.separator) )
       this.outputDir += File.separator;
     
@@ -331,6 +354,18 @@ public class PhotoMerger
   {
     this.avoidDups = avoidDups;
   }
+  
+  /**
+   * Makes monthly directories based on when the pictures where taken
+   * 
+   * @param mkDirs flag indicating whether or not to create monthly directories 
+   *        based on when the pictures where taken
+   */
+  public void makeMonthlyDirectories( boolean mkDirs )
+  {
+    this.makeMonthlyDirs = mkDirs;
+  }
+  
   
   /**
    * Gets the flag to whether skip files taken at the same time and
@@ -465,9 +500,23 @@ public class PhotoMerger
     {
       String name = this.outputDir + this.prefix + "_" + 
                     this.startIndex++ + "." + item.getExtension();
+      
+      if( this.makeMonthlyDirs )
+      {
+        Date taken = item.getDateTaken();
+        String path = this.outputDir + File.separator + 
+                            this.folderFormatter.format(taken);
+        Files.createDirectories(Paths.get(path));
+        name = path + File.separator + this.prefix + "_" + 
+            this.startIndex++ + "." + item.getExtension();
+        
+      }
+      
       logger.info("Renaming file " + item.getFilename() + " to " + name);
       File src = new File(item.getFilename());
       File tgt = new File(name);
+      
+      
       try
       {
         Files.copy(src.toPath(), tgt.toPath());

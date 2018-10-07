@@ -73,6 +73,7 @@ public class PhotoGUI extends JFrame
   private String default_path = null;
   private JCheckBox useLastModChkBox = new JCheckBox("Use last modified date.");
   private JCheckBox avoidDuplicatesChkBox = new JCheckBox("Avoid Duplicates.");
+  private JCheckBox monthlyChkBox = new JCheckBox("Create Monthly Folders.");
   private JTextField tolerance_textField;
   private PhotoMergerHandler handler = null;
   
@@ -120,7 +121,7 @@ public class PhotoGUI extends JFrame
     final JTextArea dbgTextArea = new JTextArea();
     dbgTextArea.setBackground(Color.LIGHT_GRAY);
     dbgTextArea.setEditable(false);
-    dbgTextArea.setBounds(421, 5, 4, 22);
+    dbgTextArea.setBounds(421, 5, 4, 20);
     this.handler = new PhotoMergerHandler(dbgTextArea);
     logger = PhotoMergerUtils.getLogger(this.handler);
     
@@ -177,7 +178,7 @@ public class PhotoGUI extends JFrame
      ***********************************************************************/
     JLabel lblInputDirectory = new JLabel("Order files from here");
     lblInputDirectory.setToolTipText("The directory to rename or merge all pictures");
-    lblInputDirectory.setBounds(10, 11, 150, 14);
+    lblInputDirectory.setBounds(10, 11, 150, 20);
     controlsPanel.add(lblInputDirectory);
     
     in_textField = new JTextField(inputDir);
@@ -200,15 +201,25 @@ public class PhotoGUI extends JFrame
         logger.info("Setting Input Directory to " + inputDir);
       }
     });
-    btnSelect.setBounds(425, 11, 89, 23);
+    btnSelect.setBounds(425, 11, 89, 20);
     controlsPanel.add(btnSelect);
+    
+    /***********************************************************************
+     ************             Use Modified Date                 ************
+     ***********************************************************************/
+    this.useLastModChkBox.setToolTipText("If the metadata cannot be extractied, it uses the last time the file was modified");
+    //this.useLastModChkBox.setBounds(300, 140, 200, 14);
+    this.useLastModChkBox.setBounds(520, 14, 200, 20);
+    this.useLastModChkBox.setSelected(false);
+    controlsPanel.add(this.useLastModChkBox);
+    
     
     /***********************************************************************
      ************             Merge Directory                   ************
      ***********************************************************************/
     JLabel lblMergeDirectory = new JLabel("And here (Optional)");
     lblMergeDirectory.setToolTipText("The directory of the pictures to merge");
-    lblMergeDirectory.setBounds(10, 43, 150, 14);
+    lblMergeDirectory.setBounds(10, 43, 150, 20);
     controlsPanel.add(lblMergeDirectory);
     
     merge_textField = new JTextField(mergeDir);
@@ -230,15 +241,25 @@ public class PhotoGUI extends JFrame
         logger.info("Setting Merge Directory to " + mergeDir);
       }
     });
-    button.setBounds(425, 43, 89, 23);
+    button.setBounds(425, 43, 89, 20);
     controlsPanel.add(button);
+    
+    /***********************************************************************
+     ************             Remove Duplicates                 ************
+     ***********************************************************************/
+    this.avoidDuplicatesChkBox.setToolTipText("Skips more than one file taken at the same time with the same size");
+    //this.avoidDuplicatesChkBox.setBounds(500, 140, 150, 14);
+    this.avoidDuplicatesChkBox.setBounds(520, 46, 150, 20);
+    this.avoidDuplicatesChkBox.setSelected(true);
+    controlsPanel.add(this.avoidDuplicatesChkBox);
+    
     
     /***********************************************************************
      ************             Output Directory                  ************
      ***********************************************************************/
     JLabel lblOutputDirectory = new JLabel("In Here..");
     lblOutputDirectory.setToolTipText("The directory where to store the pictures");
-    lblOutputDirectory.setBounds(10, 72, 150, 14);
+    lblOutputDirectory.setBounds(10, 72, 150, 20);
     controlsPanel.add(lblOutputDirectory);
     
     out_textField = new JTextField(outputDir);
@@ -259,15 +280,24 @@ public class PhotoGUI extends JFrame
         logger.info("Setting Output Directory to " + outputDir);
       }
     });
-    button_1.setBounds(425, 72, 89, 23);
+    button_1.setBounds(425, 72, 89, 20);
     controlsPanel.add(button_1);
+    
+    /***********************************************************************
+     ************              Monthly Folders                  ************
+     ***********************************************************************/
+    this.monthlyChkBox.setToolTipText("Creates monthly folders to store files in them rather than a single destination folder");
+    this.monthlyChkBox.setBounds(520, 76, 250, 20);  
+    this.monthlyChkBox.setSelected(true);
+    controlsPanel.add(this.monthlyChkBox);
+    
     
     /***********************************************************************
      ************               Image Prefix                    ************
      ***********************************************************************/
     JLabel lblPrefix = new JLabel("Prefix");
     lblPrefix.setToolTipText("The prefix to use when generating the pictures name");
-    lblPrefix.setBounds(10, 107, 90, 14);
+    lblPrefix.setBounds(10, 107, 90, 20);
     controlsPanel.add(lblPrefix);
     
     prefix_textField = new JTextField(prefix);
@@ -275,37 +305,24 @@ public class PhotoGUI extends JFrame
     prefix_textField.setColumns(10);
     prefix_textField.setBounds(179, 104, 60, 20);
     controlsPanel.add(prefix_textField);
-    
-    startIndx_textField = 
-        new JTextField( startIndx );
-    startIndx_textField.setToolTipText("The index number to begin the sequence");
-    startIndx_textField.setColumns(10);
-    startIndx_textField.setBounds(179, 135, 60, 20);
-    controlsPanel.add(startIndx_textField);
-    
+
     /***********************************************************************
      ************                Start Index                    ************
      ***********************************************************************/
     JLabel lblStartIndex = new JLabel("Start Index");
     lblStartIndex.setToolTipText("The index number to begin the sequence");
-    lblStartIndex.setBounds(10, 132, 90, 14);
+    //lblStartIndex.setBounds(10, 132, 90, 20);
+    lblStartIndex.setBounds(330, 104, 90, 20);
     controlsPanel.add(lblStartIndex);
- 
-    /***********************************************************************
-     ************             Use Modified Date                 ************
-     ***********************************************************************/
-    this.useLastModChkBox.setToolTipText("If the metadata cannot be extractied, it uses the last time the file was modified");
-    this.useLastModChkBox.setBounds(300, 140, 200, 14);
-    this.useLastModChkBox.setSelected(false);
-    controlsPanel.add(this.useLastModChkBox);
     
-    /***********************************************************************
-     ************             Remove Duplicates                 ************
-     ***********************************************************************/
-    this.avoidDuplicatesChkBox.setToolTipText("Skips more than one file taken at the same time with the same size");
-    this.avoidDuplicatesChkBox.setBounds(500, 140, 150, 14);
-    this.avoidDuplicatesChkBox.setSelected(true);
-    controlsPanel.add(this.avoidDuplicatesChkBox);
+    startIndx_textField = 
+        new JTextField( startIndx );
+    startIndx_textField.setToolTipText("The index number to begin the sequence");
+    startIndx_textField.setColumns(10);
+    //startIndx_textField.setBounds(179, 135, 60, 20);
+    startIndx_textField.setBounds(425, 104, 60, 20);
+    controlsPanel.add(startIndx_textField);
+    
     
     /***********************************************************************
      ************               Tolerance                    ************
@@ -315,47 +332,28 @@ public class PhotoGUI extends JFrame
                  "Greater % might remove pictures taken in rapid shutter mode";
     lblTolerance.setToolTipText(tip);
     
-    lblTolerance.setBounds(660, 140, 100, 14);
+    lblTolerance.setBounds(520, 107, 100, 20);
     controlsPanel.add(lblTolerance);
     
     tolerance_textField = new JTextField( Double.toString(tolerance) );
     tolerance_textField.setToolTipText(tip);
     tolerance_textField.setColumns(4);
-    tolerance_textField.setBounds(760, 140, 50, 14);
+    tolerance_textField.setBounds(620, 107, 50, 20);
     controlsPanel.add(tolerance_textField);
-    
-    
-    /***********************************************************************
-     ************           Go, Reset, Exit Buttons             ************
-     ***********************************************************************/
-    JButton btnGo = new JButton("Go");
-    btnGo.setToolTipText("Performs the operation (rename or merge)");
-    btnGo.setBounds(157, 170, 79, 23);
-    controlsPanel.add(btnGo);
-    
-    JButton btnCancel = new JButton("Exit");
-    btnCancel.setToolTipText("Exits the program");
-    btnCancel.addActionListener(new ActionListener() 
-    {
-      public void actionPerformed(ActionEvent e) 
-      {
-        closeFrame();
-      }
-    });
-    btnCancel.setBounds(335, 170, 79, 23);
-    controlsPanel.add(btnCancel);
     
     /***********************************************************************
      ************             Verbosity Level                   ************
      ***********************************************************************/
     JLabel lblVerbosity = new JLabel("Verbosity");
     lblVerbosity.setToolTipText("How much output needs to be sent to the screen");
-    lblVerbosity.setBounds(305, 120, 75, 14);
+    //lblVerbosity.setBounds(305, 120, 75, 14);
+    lblVerbosity.setBounds(10, 140, 75, 20);
     controlsPanel.add(lblVerbosity);
     
     final JComboBox<Level> comboBox = new JComboBox<Level>();
     comboBox.setToolTipText("How much output needs to be sent to the screen");
-    comboBox.setBounds(425, 117, 90, 20);
+    //comboBox.setBounds(425, 117, 90, 20);
+    comboBox.setBounds(179, 140, 90, 20);
     comboBox.addItem(Level.SEVERE);
     comboBox.addItem(Level.WARNING);
     comboBox.addItem(Level.INFO);
@@ -365,27 +363,6 @@ public class PhotoGUI extends JFrame
     comboBox.setSelectedItem(Level.parse(debugLvl));
     controlsPanel.add(comboBox);
     
-    JButton btnClearLog = new JButton("Clear Log");
-    btnClearLog.setToolTipText("Clears the log screen");
-    controlsPanel.add(btnClearLog);
-    btnClearLog.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) 
-      {
-        dbgTextArea.setText("");
-      }
-    });
-    btnClearLog.setBounds(730, 170, 120, 23);
-    
-    JButton resetBtn = new JButton("Reset");
-    resetBtn.setToolTipText("Resets all the inputs to their degfault values");
-    resetBtn.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) 
-      {
-        resetValues();
-      }
-    });
-    resetBtn.setBounds(246, 170, 79, 23);
-    controlsPanel.add(resetBtn);
     
     JButton btnPropsViewer = new JButton("Props. Viewer");
     btnPropsViewer.addActionListener(new ActionListener() {
@@ -408,7 +385,7 @@ public class PhotoGUI extends JFrame
         });
       }
     });
-    btnPropsViewer.setBounds(570, 170, 150, 23);
+    btnPropsViewer.setBounds(425, 170, 150, 23);
     controlsPanel.add(btnPropsViewer);
     
     comboBox.addActionListener(new ActionListener()
@@ -420,6 +397,52 @@ public class PhotoGUI extends JFrame
               new PhotoMergerHandler(dbgTextArea));
       }
     });
+    
+    JButton btnClearLog = new JButton("Clear Log");
+    btnClearLog.setToolTipText("Clears the log screen");
+    controlsPanel.add(btnClearLog);
+    btnClearLog.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) 
+      {
+        dbgTextArea.setText("");
+      }
+    });
+    btnClearLog.setBounds(585, 170, 120, 23);
+    
+
+    /***********************************************************************
+     ************           Go, Reset, Exit Buttons             ************
+     ***********************************************************************/
+    JButton btnGo = new JButton("Go");
+    btnGo.setToolTipText("Performs the operation (rename or merge)");
+    btnGo.setBounds(10, 170, 79, 23);
+    controlsPanel.add(btnGo);
+    
+    JButton resetBtn = new JButton("Reset");
+    resetBtn.setToolTipText("Resets all the inputs to their degfault values");
+    resetBtn.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) 
+      {
+        resetValues();
+      }
+    });
+    resetBtn.setBounds(99, 170, 79, 23);
+    controlsPanel.add(resetBtn);
+    
+    
+    JButton btnCancel = new JButton("Exit");
+    btnCancel.setToolTipText("Exits the program");
+    btnCancel.addActionListener(new ActionListener() 
+    {
+      public void actionPerformed(ActionEvent e) 
+      {
+        closeFrame();
+      }
+    });
+    btnCancel.setBounds(188, 170, 79, 23);
+    controlsPanel.add(btnCancel);
+    
+    
     
     /***********************************************************************
      ***********************************************************************
@@ -452,6 +475,8 @@ public class PhotoGUI extends JFrame
         String lvl = comboBox.getSelectedItem().toString();
         boolean useIt = useLastModChkBox.isSelected();
         boolean remDup = avoidDuplicatesChkBox.isSelected();
+        boolean mkDirs = monthlyChkBox.isSelected();
+        
         try
         {
           double tolerance = Double.parseDouble( tolerance_textField.getText() );
@@ -531,7 +556,8 @@ public class PhotoGUI extends JFrame
         {
           new PhotoMerger(inDir, outDir, mergeDir, startIndex, prefix, 
               (Level)comboBox.getSelectedItem(), 
-              new PhotoMergerHandler(dbgTextArea), useIt, remDup);
+              new PhotoMergerHandler(dbgTextArea), useIt, remDup, mkDirs);
+          
           if( mergeDir == null || mergeDir.length() == 0 )
             showMessage("Files were renamed successfullly");
           else

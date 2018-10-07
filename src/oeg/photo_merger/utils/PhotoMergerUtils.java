@@ -456,4 +456,29 @@ public class PhotoMergerUtils
     
     return map;
   }
+  
+  /**
+   * Stops a thread for the number of millisecond given as a parameter.  It 
+   * ignores the InterruptedException, but throws a RuntimeException if the 
+   * number is negative.
+   * 
+   * @param millisecs the number of milliseconds to wait
+   * 
+   * @throws RuntimeException a RuntimeException is thrown if the number of 
+   *         milliseconds to wait is less than zero
+   */
+  public static void pause(long millisecs)
+  {
+    try
+    {
+      if( millisecs < 0 )
+        throw new RuntimeException("The time needs to be positive");
+      
+      Thread.sleep(millisecs);
+    }
+    catch(InterruptedException e)
+    {
+      
+    }
+  }
 }

@@ -36,12 +36,21 @@ public class PhotoMergerHandler extends Handler
   public void publish(LogRecord record) 
   {
     // ensure that this log record should be logged by this Handler
-    if (!isLoggable(record))
-      return;
-    
-    // Output the formatted data to the text area
-    String txt = this.textArea.getText() + "\n";
-    this.textArea.setText(txt + getFormatter().format(record));
+    if( isLoggable(record))
+    {
+      synchronized( this.textArea )
+      {
+        this.textArea.append("\n" + getFormatter().format(record));
+        this.textArea.update(this.textArea.getGraphics());
+
+      }
+    }
+//    if (!isLoggable(record))
+//      return;
+//    
+//    // Output the formatted data to the text area
+//    String txt = this.textArea.getText() + "\n";
+//    this.textArea.setText(txt + getFormatter().format(record));
   }
 
   /**
