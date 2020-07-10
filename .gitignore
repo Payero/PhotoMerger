@@ -2,3 +2,7 @@
 .settings
 classes
 
+build/
+lib/photo-merger.jar
+
+
