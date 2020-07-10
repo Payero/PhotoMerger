@@ -498,8 +498,9 @@ public class PhotoMerger
     
     for(PhotoItem item: inItems)
     {
+      int nextIndex = this.startIndex++;
       String name = this.outputDir + this.prefix + "_" + 
-                    this.startIndex++ + "." + item.getExtension();
+                    nextIndex + "." + item.getExtension();
       
       if( this.makeMonthlyDirs )
       {
@@ -508,7 +509,7 @@ public class PhotoMerger
                             this.folderFormatter.format(taken);
         Files.createDirectories(Paths.get(path));
         name = path + File.separator + this.prefix + "_" + 
-            this.startIndex++ + "." + item.getExtension();
+            nextIndex + "." + item.getExtension();
         
       }
       
