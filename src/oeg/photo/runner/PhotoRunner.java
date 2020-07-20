@@ -7,8 +7,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,9 +51,11 @@ public class PhotoRunner
         }
         int start = Integer.parseInt( map.get("start-index") );
         String prefix = map.get("prefix");
-        boolean useLastMod = Boolean.getBoolean(map.get("last-mod-date") );
-        boolean remDups = Boolean.getBoolean(map.get("rem-duplcates") );
-        boolean makeDirs = Boolean.getBoolean(map.get("make-dirs") );
+        this.logger.debug("Using last mod date? " + map.get("use-last-mod-date")  );
+        boolean useLastMod = Boolean.parseBoolean(map.get("use-last-mod-date") );
+        this.logger.debug("Using last mod date? " + useLastMod  );
+        boolean remDups = Boolean.parseBoolean(map.get("rem-duplcates") );
+        boolean makeDirs = Boolean.parseBoolean(map.get("make-dirs") );
         
         
         for( File file : this.files ) 
@@ -64,8 +64,7 @@ public class PhotoRunner
           String path = outName + File.separator + file.getName();
           this.logger.debug("Output Dir: " + path);
           
-          new PhotoMerger(file.getAbsolutePath(), path, 
-              null, start, prefix, Level.FINEST, new ConsoleHandler(),
+          new PhotoMerger(file.getAbsolutePath(), path, null, start, prefix,
               useLastMod, remDups, makeDirs);
           
           
