@@ -19,27 +19,21 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.sound.midi.MidiDevice.Info;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import com.drew.imaging.ImageMetadataReader;
-import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
-import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.mov.QuickTimeDirectory;
 import com.drew.metadata.mp4.Mp4Directory;
 
 import oeg.photo_merger.utils.ExifTool;
-import oeg.photo_merger.utils.ExifTool.Feature;
 import oeg.photo_merger.utils.PhotoItem;
-import oeg.photo_merger.utils.PhotoMergerHandler;
 import oeg.photo_merger.utils.PhotoMergerUtils;
 
 /**
