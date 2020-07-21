@@ -10,8 +10,6 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.Vector;
 import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
-import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -26,6 +24,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
+
+import org.apache.logging.log4j.Logger;
 
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.metadata.Directory;
@@ -52,7 +52,7 @@ public class PropsViewer extends JFrame
   private JTable propsTable = null;
   private String path = ".";
   /* The object used to print messages to the screen */
-  private static Logger logger = null; 
+  private Logger logger = null; 
 
   /**
    * Launch the application.
@@ -65,7 +65,7 @@ public class PropsViewer extends JFrame
       {
         try
         {
-          PropsViewer frame = new PropsViewer(new ConsoleHandler(), ".");
+          PropsViewer frame = new PropsViewer(".");
           frame.setVisible(true);
         }
         catch (Exception e)
@@ -82,9 +82,9 @@ public class PropsViewer extends JFrame
   /**
    * Create the frame.
    */
-  public PropsViewer(Handler handler, String path)
+  public PropsViewer(String path)
   {
-    this.logger = PhotoMergerUtils.getLogger(handler); 
+    this.logger = PhotoMergerUtils.getLogger(); 
     this.path = path;
     this.setMinimumSize(new Dimension(1000, 900));
     Vector<String> fHeader = new Vector<String>();
@@ -104,7 +104,7 @@ public class PropsViewer extends JFrame
     row.add("Val");
     pData.add(row);
     
-    this.propsModel = new PropertiesTableModel(handler, pData, pHeader);
+    this.propsModel = new PropertiesTableModel(pData, pHeader);
     this.propsTable = new JTable(this.propsModel);
     
     SelectionListener listener = new SelectionListener(filesTable, propsModel);
@@ -148,7 +148,7 @@ public class PropsViewer extends JFrame
           if( newFile != null )
             setFiles(newFile.getAbsolutePath());
           else
-            logger.fine("The Selected path is null");
+            logger.debug("The Selected path is null");
 
         } 
       }
@@ -166,7 +166,7 @@ public class PropsViewer extends JFrame
     Vector<String> files = new Vector<String>();
     
     int rowCount = this.fileModel.getRowCount();
-    logger.finest("Removing " + rowCount);
+    logger.trace("Removing " + rowCount);
     //Remove rows one by one from the end of the table
     for (int i = rowCount - 1; i >= 0; i--) 
     {
@@ -182,20 +182,20 @@ public class PropsViewer extends JFrame
         for( File file: fnames )
         {
           String fname = file.getAbsolutePath();
-          logger.finest("Testing file: " + fname);
+          logger.trace("Testing file: " + fname);
           int end = fname.lastIndexOf('.');
           if ( end > 0 )
           {
             String ext = fname.substring(end + 1, fname.length() ).toUpperCase();
-            logger.finest("Looking for extension: " + ext);
+            logger.trace("Looking for extension: " + ext);
             // if the extension is part of the approved list, add it
             if( PhotoMergerUtils.EXTS.contains(ext) )
             {
-              logger.fine("Adding file to list");
+              logger.debug("Adding file to list");
               files.add(fname);
             }
             else
-              logger.finest("Skipping file: " + fname);
+              logger.trace("Skipping file: " + fname);
           }
         }
       }
@@ -272,7 +272,7 @@ public class PropsViewer extends JFrame
       {
         // First need to remove old ones
         int rowCount = this.model.getRowCount();
-        logger.finest("Removing " + rowCount);
+        logger.trace("Removing " + rowCount);
         //Remove rows one by one from the end of the table
         for (int i = rowCount - 1; i >= 0; i--) 
         {
@@ -283,19 +283,19 @@ public class PropsViewer extends JFrame
         File file = new File(name);
         if( file != null && file.isFile() )
         {
-          logger.finest("Reading File " + name);
+          logger.trace("Reading File " + name);
           Metadata metadata = ImageMetadataReader.readMetadata(file);
           
           for (Directory directory : metadata.getDirectories()) 
           {
             String dName = directory.getName();
-            logger.finest("Adding Directory " + dName);
+            logger.trace("Adding Directory " + dName);
             this.model.add(dName, "");
             for (Tag tag : directory.getTags()) 
             {
               String tName = tag.getTagName();
               String val = tag.getDescription();
-              logger.finest("Adding Tag: "+ tName + " = " + val);
+              logger.trace("Adding Tag: "+ tName + " = " + val);
               
               this.model.add(tName, val);
                 

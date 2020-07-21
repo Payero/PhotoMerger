@@ -14,16 +14,15 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.metadata.Directory;
@@ -65,7 +64,7 @@ public class PhotoMerger
   /* The index number to start the sequence to generate file names */
   private int startIndex = 1;
   /* The object used to print messages to the screen */
-  private static Logger logger = null;
+  private static Logger logger = PhotoMergerUtils.getLogger("PhotoMerger");
   /**
    * Stores a list of file names that could not be processed
    */
@@ -129,7 +128,7 @@ public class PhotoMerger
                      int startIndx, String prefix)
   {
     this(inputDir, outDir, mergeDir, startIndx, prefix, 
-        Level.INFO, new ConsoleHandler());
+        Level.INFO);
   }
   
   /**
@@ -146,12 +145,11 @@ public class PhotoMerger
    *        files
    * @param prefix The prefix used when generating the name of the files
    * @param lvl The verbosity level or amount of messages print to the screen
-   * @param handler The handler where the debug messages will be displayed
    */  
   public PhotoMerger(String inputDir, String outDir, String mergeDir, 
-      int startIndx, String prefix, Level level, Handler handler)
+      int startIndx, String prefix, Level level)
   {
-    this(inputDir, outDir, mergeDir, startIndx, prefix, level, handler, 
+    this(inputDir, outDir, mergeDir, startIndx, prefix, level, 
         false, true, true);
   }
 
@@ -169,7 +167,6 @@ public class PhotoMerger
    *        files
    * @param prefix The prefix used when generating the name of the files
    * @param lvl The verbosity level or amount of messages print to the screen
-   * @param handler The handler where the debug messages will be displayed
    * @param useLastModDate use the last modified date for files that it could
    *        not be retrieved
    * @param avoidDup avoids copying more than one file with the same date taken
@@ -178,11 +175,9 @@ public class PhotoMerger
    * 
    */  
   public PhotoMerger(String inputDir, String outDir, String mergeDir, 
-      int startIndx, String prefix, Level level, Handler handler, 
+      int startIndx, String prefix, Level level, 
       boolean useLastModDate, boolean remDups, boolean mkDirs)
   {
-    logger = PhotoMergerUtils.getLogger(level, handler);
-    
     try
     {
       this.setInputDir(inputDir);
@@ -198,7 +193,7 @@ public class PhotoMerger
     }
     catch( IOException e)
     {
-      logger.severe(e.getMessage());
+      logger.error(e.getMessage());
       e.printStackTrace();
     }
   }
@@ -242,7 +237,7 @@ public class PhotoMerger
    */
   public void setOutputDir(String outputDir) throws IOException
   {
-    logger.fine("Setting Output to " + outputDir);
+    logger.debug("Setting Output to " + outputDir);
     if( outputDir == null || outputDir.length() == 0 )
     {
       logger.info("Setting output directory to " + this.inputDir);
@@ -260,7 +255,7 @@ public class PhotoMerger
     if( !this.outputDir.endsWith(File.separator) )
       this.outputDir += File.separator;
     
-    logger.fine("Output Directory set to " + this.outputDir);
+    logger.debug("Output Directory set to " + this.outputDir);
   }
 
   /**
@@ -416,7 +411,7 @@ public class PhotoMerger
   {
     try
     {
-      logger.fine("Processing Request");
+      logger.debug("Processing Request");
       ArrayList<PhotoItem> inItems = this.getPhotoItems(this.inputDir);
       // the merge directory is not set, so renaming files only
       if( this.mergeDir == null && this.prefix != null )
@@ -518,7 +513,7 @@ public class PhotoMerger
       }
       catch(FileAlreadyExistsException e)
       {
-        logger.warning("File " + item.getFilename() + " already exists");
+        logger.warn("File " + item.getFilename() + " already exists");
       }
     }  
   }
@@ -532,7 +527,7 @@ public class PhotoMerger
    */
   private List<PhotoItem> avoidDuplicates( List<PhotoItem> inItems )
   {
-    logger.fine("Removing duplicates from list with " + inItems.size() + " items" );
+    logger.debug("Removing duplicates from list with " + inItems.size() + " items" );
     List<PhotoItem> listToRet = new ArrayList<>();
 
     for (PhotoItem item : inItems)
@@ -549,7 +544,7 @@ public class PhotoMerger
       }
     }
     
-    logger.fine("Returning " + listToRet.size() + " items");
+    logger.debug("Returning " + listToRet.size() + " items");
     return listToRet;
   }
   
@@ -627,7 +622,7 @@ public class PhotoMerger
           }
           catch (Exception e)
           {
-            logger.warning("Error while processing: " + fname );
+            logger.warn("Error while processing: " + fname );
             date = this.getDateTimeOriginal(file);
             if( date != null )
               items.add(new PhotoItem(fname, date, ext, size));
@@ -667,7 +662,7 @@ public class PhotoMerger
     }
     catch( Exception e )
     {
-      logger.severe("Got an error " + e.getMessage());
+      logger.error("Got an error " + e.getMessage());
     }
     
     if (date == null && this.useLastModDate )
@@ -764,7 +759,7 @@ public class PhotoMerger
    */
   private boolean testDirectory(String path)
   {
-    logger.fine("Testing Directory to " + path);
+    logger.debug("Testing Directory to " + path);
     if( path == null )
       return false;
     
@@ -786,6 +781,6 @@ public class PhotoMerger
     new PhotoMerger("/home/oeg/1-img-test/dups", 
         "/home/oeg/1-img-test/out", 
         null, 
-        1, "TST", Level.FINEST, new ConsoleHandler());
+        1, "TST", Level.DEBUG);
   }
 }

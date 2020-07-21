@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -16,6 +14,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 
 import oeg.photo_merger.utils.PhotoMergerUtils;
 
@@ -63,10 +63,11 @@ public class MainPhotoMerger
   public MainPhotoMerger(String inputDir, String outDir, String mergeDir, 
                          int startIndx, String prefix, String lvl)
   {
+    String name = MainPhotoMerger.class.getName();
     if( lvl != null)
-      logger = PhotoMergerUtils.getLogger(Level.parse(lvl), new ConsoleHandler() );
+      logger = PhotoMergerUtils.getLogger(name, Level.getLevel(lvl) );
     else
-      logger = PhotoMergerUtils.getLogger(new ConsoleHandler());
+      logger = PhotoMergerUtils.getLogger(name);
     
     // Making sure the inputDirectory is valid
     if( inputDir == null )
@@ -142,157 +143,6 @@ public class MainPhotoMerger
    */
   public static void main(String[] args)
   {
-//    String configFile = "";
-//    String lvl = "INFO";
-//    String inputDir = null;
-//    String mergeDir = null;
-//    String outputDir = null;
-//    int startIndx = 1;
-//    String prefix = PhotoMergerUtils.PREFIX;
-//    
-//    /**
-//     * CLI Options
-//     */
-//    Option help = new Option("h", "help", false, "prints this message");
-//    
-//    Option in = new Option( "i", "input-dir", true, 
-//        "The path to the folder with the pictures");
-//    
-//    Option md = new Option("m", "merge-dir", true, 
-//        "The path to the directory containing the pictures to merge");
-//    Option out = new Option("o", "output-dir", true, 
-//        "The path of the directory to store merged files");
-//    Option config = new Option("c", "config-file", true, 
-//        "Optional configuration file");;
-//    Option indx = new Option("s", "start-index", true, 
-//        "The initial value to start the file numbering. Default: 1");
-//    Option pfx = new Option("p", "prefix", true, 
-//        "The prefix to use when setting the file name. Default: IMG");
-//    Option verbosity = new Option("v", "verbosity", true, 
-//        "Verbosity level: [SEVERE|WARNING|INFO|FINE|FINER|FINEST]");
-//
-//
-//    MainPhotoMerger.options.addOption(help);
-//    MainPhotoMerger.options.addOption(in);
-//    MainPhotoMerger.options.addOption(md);
-//    MainPhotoMerger.options.addOption(out);
-//    MainPhotoMerger.options.addOption(config);
-//    MainPhotoMerger.options.addOption(indx);
-//    MainPhotoMerger.options.addOption(pfx);
-//    MainPhotoMerger.options.addOption(verbosity);
-//    
-//
-//    /**
-//     * CLI Parser
-//     */
-//    CommandLineParser parser = new DefaultParser();
-//    try
-//    {
-//      CommandLine line = parser.parse(options, args);
-//      if (line.hasOption("h"))
-//      {
-//        HelpFormatter formatter = new HelpFormatter();
-//        formatter.printHelp("MainPhotoMerger", options);
-//      } 
-//      else
-//      {
-//        /**
-//         * if there is a config file, it will override
-//         * the defaults in this file using it's values.
-//         * the command line options will override the
-//         * values from the config file
-//         */
-//        if (line.hasOption("c"))
-//        {
-//          configFile = line.getOptionValue("c");
-//          Properties props = new Properties();
-//          FileInputStream fis = null;
-//
-//          try
-//          {
-//            fis = new FileInputStream(configFile);
-//            props.load(fis);
-//            fis.close();
-//          } catch (IOException e)
-//          {
-//            e.printStackTrace();
-//          }
-//
-//          if (props.getProperty("input-dir") != null)
-//            inputDir = props.getProperty("input-dir");
-//
-//          if (props.getProperty("merge-dir") != null)
-//            mergeDir = props.getProperty("merge-dir");
-//
-//          if (props.getProperty("output-dir") != null)
-//            outputDir = props.getProperty("output-dir");
-//          
-//          if (props.getProperty("prefix") != null)
-//            prefix = props.getProperty("prefix");
-//          
-//          if (props.getProperty("start-index") != null)
-//            startIndx = Integer.parseInt(props.getProperty("start-index"));
-//          
-//          if (props.getProperty("verbosity") != null)
-//          {
-//            String tmp =  props.getProperty("verbosity");
-//            switch(tmp)
-//            {
-//              case "SEVERE":
-//              case "WARNING":
-//              case "INFO":
-//              case "FINE":
-//              case "FINER":
-//              case "FINEST":
-//                lvl = tmp;
-//                break;
-//              default:
-//                System.err.println("Invalid verbosity option: " + tmp);
-//                System.exit(-2);
-//            }
-//          }
-//        }
-//
-//        if (line.hasOption("i"))
-//            inputDir = line.getOptionValue("i");
-//
-//        if (line.hasOption("m"))
-//            mergeDir = line.getOptionValue("m");
-//
-//        if (line.hasOption("o"))
-//            outputDir = line.getOptionValue("o");
-//        
-//        if (line.hasOption("s"))
-//            startIndx = Integer.parseInt(line.getOptionValue("s"));
-//        
-//        if (line.hasOption("p"))
-//            prefix = line.getOptionValue("p");
-//        
-//        
-//        if (line.hasOption("v"))
-//        {
-//          String tmp = line.getOptionValue("v");
-//          switch(tmp)
-//          {
-//            case "SEVERE":
-//            case "WARNING":
-//            case "INFO":
-//            case "FINE":
-//            case "FINER":
-//            case "FINEST":
-//              lvl = tmp;
-//              break;
-//            default:
-//              System.err.println("Invalid verbosity option: " + tmp);
-//              System.exit(-2);
-//          }
-//        }
-//      }
-//    } catch (ParseException exp)
-//    {
-//      // oops, something went wrong
-//      System.err.println("Parsing failed. Reason: " + exp.getMessage());
-//    }
     Map<String, String> map = PhotoMergerUtils.parseCommandLineArgs(args);
     
     new MainPhotoMerger( map.get("input-dir"), map.get("output-dir"), 

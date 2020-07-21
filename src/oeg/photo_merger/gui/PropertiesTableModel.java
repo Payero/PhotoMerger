@@ -1,10 +1,10 @@
 package oeg.photo_merger.gui;
 
 import java.util.Vector;
-import java.util.logging.Handler;
-import java.util.logging.Logger;
 
 import javax.swing.table.DefaultTableModel;
+
+import org.apache.logging.log4j.Logger;
 
 import oeg.photo_merger.utils.PhotoMergerUtils;
 
@@ -24,10 +24,10 @@ public class PropertiesTableModel extends DefaultTableModel
     private static Logger logger = null;
     
     // constructor 
-    public PropertiesTableModel(Handler handler, Vector<Vector<String>> data, Vector<String> header) 
+    public PropertiesTableModel(Vector<Vector<String>> data, Vector<String> header) 
     {
       super(data, header);
-      logger = PhotoMergerUtils.getLogger(handler);
+      logger = PhotoMergerUtils.getLogger();
       
       // save the header
       this.header = header; 

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -64,9 +65,8 @@ public class PhotoRunner
           String path = outName + File.separator + file.getName();
           this.logger.debug("Output Dir: " + path);
           
-          new PhotoMerger(file.getAbsolutePath(), path, null, start, prefix,
+          new PhotoMerger(file.getAbsolutePath(), path, null, start, prefix, Level.DEBUG,
               useLastMod, remDups, makeDirs);
-          
           
         }
       }

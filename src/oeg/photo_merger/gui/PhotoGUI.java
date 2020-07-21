@@ -11,15 +11,16 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.config.Configurator;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -31,10 +32,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import oeg.photo_merger.main.MainPhotoMerger;
 import oeg.photo_merger.main.PhotoMerger;
-import oeg.photo_merger.utils.PhotoMergerHandler;
 import oeg.photo_merger.utils.PhotoMergerUtils;
+import oeg.photo_merger.utils.TextAreaAppender;
 
 import java.awt.Color;
 
@@ -56,7 +56,8 @@ public class PhotoGUI extends JFrame
   /* Required Unique ID for each Class */
   private static final long serialVersionUID = 8856845378051984123L;
   /* Object used to print debug messages to the screen */
-  private static Logger logger = null;
+  private static Logger logger = PhotoMergerUtils.getLogger();
+  
   /* Main graphical component where all other components reside */
   private JPanel contentPane;
   /* Stores the directory to rename and/or merge all the pictures in it */
@@ -75,7 +76,11 @@ public class PhotoGUI extends JFrame
   private JCheckBox avoidDuplicatesChkBox = new JCheckBox("Avoid Duplicates.");
   private JCheckBox monthlyChkBox = new JCheckBox("Create Monthly Folders.");
   private JTextField tolerance_textField;
-  private PhotoMergerHandler handler = null;
+  
+  private TextAreaAppender areaAppender = null;
+  
+  
+  
   
   /**
    * Launch the application.
@@ -122,8 +127,11 @@ public class PhotoGUI extends JFrame
     dbgTextArea.setBackground(Color.LIGHT_GRAY);
     dbgTextArea.setEditable(false);
     dbgTextArea.setBounds(421, 5, 4, 20);
-    this.handler = new PhotoMergerHandler(dbgTextArea);
-    logger = PhotoMergerUtils.getLogger(this.handler);
+    
+    this.areaAppender = this.getAppender();
+    if(this.areaAppender != null )
+      this.areaAppender.setTextArea(dbgTextArea);
+    
     
     // Want to ask first, and if yes then close the frame
     this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -354,13 +362,15 @@ public class PhotoGUI extends JFrame
     comboBox.setToolTipText("How much output needs to be sent to the screen");
     //comboBox.setBounds(425, 117, 90, 20);
     comboBox.setBounds(179, 140, 90, 20);
-    comboBox.addItem(Level.SEVERE);
-    comboBox.addItem(Level.WARNING);
+    comboBox.addItem(Level.FATAL);
+    comboBox.addItem(Level.ERROR);
+    comboBox.addItem(Level.WARN);
     comboBox.addItem(Level.INFO);
-    comboBox.addItem(Level.FINE);
-    comboBox.addItem(Level.FINER);
-    comboBox.addItem(Level.FINEST);
-    comboBox.setSelectedItem(Level.parse(debugLvl));
+    comboBox.addItem(Level.DEBUG);
+    comboBox.addItem(Level.TRACE);
+    
+    
+    comboBox.setSelectedItem(Level.getLevel(debugLvl));
     controlsPanel.add(comboBox);
     
     
@@ -374,7 +384,7 @@ public class PhotoGUI extends JFrame
           {
             try
             {
-              PropsViewer frame = new PropsViewer(handler, default_path);
+              PropsViewer frame = new PropsViewer(default_path);
               frame.setVisible(true);
             }
             catch (Exception e)
@@ -393,8 +403,9 @@ public class PhotoGUI extends JFrame
       public void actionPerformed(ActionEvent evt)
       {
         Level lvl = (Level) comboBox.getSelectedItem();
-        logger = PhotoMergerUtils.getLogger(lvl, 
-              new PhotoMergerHandler(dbgTextArea));
+        System.err.println("Setting the Level in the COMBO");
+        Configurator.setLevel("PhotoMerger", lvl);
+        PhotoGUI.logger.atLevel(lvl);
       }
     });
     
@@ -466,6 +477,8 @@ public class PhotoGUI extends JFrame
       public void actionPerformed(ActionEvent e) 
       {
         logger.info("Running PhotoMerger");
+        
+        
         dbgTextArea.setText(dbgTextArea.getText() + "Running PhotoMerger");
         String inDir = in_textField.getText();
         String mergeDir = merge_textField.getText();
@@ -555,8 +568,7 @@ public class PhotoGUI extends JFrame
         else
         {
           new PhotoMerger(inDir, outDir, mergeDir, startIndex, prefix, 
-              (Level)comboBox.getSelectedItem(), 
-              new PhotoMergerHandler(dbgTextArea), useIt, remDup, mkDirs);
+              (Level)comboBox.getSelectedItem(), useIt, remDup, mkDirs);
           
           if( mergeDir == null || mergeDir.length() == 0 )
             showMessage("Files were renamed successfullly");
@@ -569,6 +581,24 @@ public class PhotoGUI extends JFrame
     
   }
 
+  private TextAreaAppender getAppender()
+  {
+    System.err.println("Setting the Text Area");
+    org.apache.logging.log4j.core.Logger concrete = (org.apache.logging.log4j.core.Logger)PhotoGUI.logger;
+    Map<String, Appender> objs = concrete.getAppenders();
+    
+    for( String name : objs.keySet() ) {
+      PhotoGUI.logger.info("The Name " + name );
+      Appender obj = objs.get(name);
+      if( obj instanceof TextAreaAppender ) 
+      {
+        PhotoGUI.logger.info("Found it!!");
+        System.err.println("Found it");
+        return ((TextAreaAppender) obj);
+      }
+    }
+    return null;
+  }
   
   private void closeFrame()
   {
@@ -613,3 +643,7 @@ public class PhotoGUI extends JFrame
                         Integer.toString(PhotoMergerUtils.START_INDEX));
   }
 }
+
+
+
+

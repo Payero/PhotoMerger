@@ -9,10 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -26,6 +23,9 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Utility class containing a collection of static methods required to perform
@@ -50,11 +50,7 @@ public class PhotoMergerUtils
    * Stores the verbosity level to determine the amount of messages sent to the
    * handlers
    */
-  public static Level LEVEL = Level.FINE;
-  /**
-   * Stores a custom handler where the messages will be displayed
-   */
-  private static Handler HANDLER = new ConsoleHandler();
+  public static Level LEVEL = Level.INFO;
   /**
    * Stores the object responsible for sending messages to the handlers
    */
@@ -116,14 +112,25 @@ public class PhotoMergerUtils
    * Generates a new Logger object using the given Level verbosity level and
    * the given handler handler
    * 
-   * @param handler the entity responsible for handling the logging records
+   * @return a logger object responsible for depicting messages to the handlers
+   */
+  public static Logger getLogger()
+  {
+    return PhotoMergerUtils.getLogger("PhotoMerger");
+  }
+
+  /**
+   * Generates a new Logger object using the given Level verbosity level and
+   * the given handler handler
    * 
    * @return a logger object responsible for depicting messages to the handlers
    */
-  public static Logger getLogger(Handler handler)
+  public static Logger getLogger( String name )
   {
-    return PhotoMergerUtils.getLogger(PhotoMergerUtils.LEVEL, handler);
+    return PhotoMergerUtils.getLogger(name, PhotoMergerUtils.LEVEL);
   }
+
+  
   
   /**
    * Generates a new Logger object using the given Level verbosity level and
@@ -131,37 +138,19 @@ public class PhotoMergerUtils
    * null ift first removes all the handlers from it and then appends it.
    * 
    * @param level the verbosity level to set the screen
-   * @param handler the entity responsible for handling the logging records
    * 
    * @return a logger object responsible for depicting messages to the handlers
    */
-  public static Logger getLogger(Level level, Handler handler)
+  public static Logger getLogger(String name , Level level)
   {
+    System.err.println("Getting a logger called " + name);
+    
     if( logger == null )
-      logger = Logger.getLogger("PhotoMerger");
+      logger = LogManager.getLogger(name);
     
-//    if( logger != null )
-//    {
-      Handler[] handlers= logger.getHandlers();
-      for( int index = 0; index < handlers.length; index++ )
-      {
-        logger.removeHandler(handlers[index]);
-      }
-//    }
-    
-    logger = Logger.getLogger("PhotoMerger");
-    logger.setUseParentHandlers(false);
     PhotoMergerUtils.LEVEL = level;
-    // ConsoleHandler needs a new line added to the end of each record, but
-    // PhotoMergerHandler does not
-    if( handler instanceof ConsoleHandler )
-      handler.setFormatter(new PhotoMergerFormatter(true));
-    else if( handler instanceof PhotoMergerHandler )
-      handler.setFormatter(new PhotoMergerFormatter(false));
-    
-    handler.setLevel(level);
-    logger.addHandler(handler);
-    logger.setLevel(level);
+
+     logger.atLevel(level);
     
     return logger;
   }
