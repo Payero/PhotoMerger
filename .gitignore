@@ -4,6 +4,8 @@ classes
 
 build/
 lib/photo-merger.jar
-
 logs
+
+data/test/out
+
 
