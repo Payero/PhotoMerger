@@ -11,6 +11,7 @@ import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.appender.AppenderLoggingException;
 import org.apache.logging.log4j.core.config.plugins.*;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.apache.logging.log4j.core.config.Property;
 
 // note: class name need not match the @Plugin name.
 @Plugin(
@@ -28,9 +29,9 @@ public final class TextAreaAppender extends AbstractAppender
   private final Lock readLock = rwLock.readLock();
 
   protected TextAreaAppender(String name, Filter filter,
-      Layout<? extends Serializable> layout, final boolean ignoreExceptions)
+      Layout<? extends Serializable> layout, final boolean ignoreExceptions, Property[] props)
   {
-    super(name, filter, layout, ignoreExceptions);
+    super(name, filter, layout, ignoreExceptions, props);
   }
   
   public void setTextArea( JTextArea area ) 
@@ -113,6 +114,8 @@ public final class TextAreaAppender extends AbstractAppender
     {
       layout = PatternLayout.createDefaultLayout();
     }
-    return new TextAreaAppender(name, filter, layout, true);
+    
+    
+    return new TextAreaAppender(name, filter, layout, true, Property.EMPTY_ARRAY);
   }
 }

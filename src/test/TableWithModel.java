@@ -8,6 +8,10 @@ import javax.swing.table.*;
 
 public class TableWithModel extends JFrame {
 
+  /**
+   * 
+   */
+  private static final long serialVersionUID = 1L;
   // the Model in instance variable so we can access it
   MyModel model;
   
@@ -60,11 +64,16 @@ public class TableWithModel extends JFrame {
       twm.model.add(token[0], token[1]);
       twm.repaint();   // this is the laziest way but it works
     }
+    in.close();
   }
   
   // class that extends the AbstractTableModel
   class MyModel extends AbstractTableModel {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -5975672568953861823L;
     // to store our elements it will be great to avoid parallel array and use 
     // an ArrayList<Animal> but for simplicity and not to have to add a new 
     // class with will use an ArrayList<Object> for each row

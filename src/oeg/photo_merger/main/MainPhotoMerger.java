@@ -1,19 +1,10 @@
 package oeg.photo_merger.main;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Map;
-import java.util.Properties;
-import java.util.logging.ConsoleHandler;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 
@@ -126,7 +117,7 @@ public class MainPhotoMerger
    * 
    * @param msg the message to display on the screen along with the usage
    */
-  private static void usage(String msg) 
+  public static void usage(String msg) 
   {
     if( msg != null )
       System.err.println(msg);

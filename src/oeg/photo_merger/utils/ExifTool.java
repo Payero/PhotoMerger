@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -194,11 +193,6 @@ import java.util.regex.Pattern;
  */
 public class ExifTool
 {
-
-  /**
-   * Generates debug print statements based on the verbosity level.
-   */
-  private Logger logger = Logger.getLogger(ExifTool.class.getName());
 
     /**
      * Flag used to indicate if debugging output has been enabled by setting the

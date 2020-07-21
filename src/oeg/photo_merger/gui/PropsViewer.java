@@ -1,21 +1,15 @@
 package oeg.photo_merger.gui;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.Vector;
-import java.util.logging.ConsoleHandler;
 
-import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -45,12 +39,10 @@ public class PropsViewer extends JFrame
   private static final long serialVersionUID = 1L;
   private JPanel contentPane;
   private JPanel filesPanel;
-  private JPanel propsPanel;
   private FilesTableModel fileModel = null;
   private PropertiesTableModel propsModel = null;
   private JTable filesTable = null;
   private JTable propsTable = null;
-  private String path = ".";
   /* The object used to print messages to the screen */
   private Logger logger = null; 
 
@@ -85,7 +77,6 @@ public class PropsViewer extends JFrame
   public PropsViewer(String path)
   {
     this.logger = PhotoMergerUtils.getLogger(); 
-    this.path = path;
     this.setMinimumSize(new Dimension(1000, 900));
     Vector<String> fHeader = new Vector<String>();
     fHeader.add("Files");

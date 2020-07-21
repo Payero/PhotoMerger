@@ -230,6 +230,7 @@ public class PhotoMergerUtils
       // removes the File of Type component
       if (component instanceof JComboBox)
       {
+        @SuppressWarnings("rawtypes")
         Object sel = ((JComboBox) component).getSelectedItem();
         
         if (sel.toString().contains("AcceptAllFileFilter"))
@@ -275,10 +276,7 @@ public class PhotoMergerUtils
     } // end of the for loop
   } // end of the method
 
-  /**
-   * Parses and prints all the options or arguments used by this application
-   */
-  private static HelpFormatter formatter = new HelpFormatter();
+
   /**
    * Stores all the options that can be used by this application
    */

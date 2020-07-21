@@ -686,7 +686,7 @@ public class PhotoMerger
    * @param dateStr the string containing the desired date
    * @return a date object if the string is parsed properly or null otherwise
    */
-  private Date getDate( String dateStr )
+  public Date getDate( String dateStr )
   {
     Date date = null;
     try 

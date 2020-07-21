@@ -7,6 +7,11 @@ import javax.swing.table.DefaultTableModel;
 public class FilesTableModel extends DefaultTableModel
 {
 
+    /**
+   * 
+   */
+  private static final long serialVersionUID = 4305588890614209682L;
+
     // to store our elements it will be great to avoid parallel array and use 
     // an ArrayList<Animal> but for simplicity and not to have to add a new 
     // class with will use an ArrayList<Object> for each row
