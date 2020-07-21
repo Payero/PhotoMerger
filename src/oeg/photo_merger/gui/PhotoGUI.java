@@ -204,9 +204,12 @@ public class PhotoGUI extends JFrame
               PhotoMergerUtils.getDirectoryName("Select Input Directory", null);
         if( inputDir != null )
           in_textField.setText(inputDir);
+
+        if( inputDir != null ) {
+          default_path = new File(inputDir).getParent();
+          logger.info("Setting Input Directory to " + inputDir);
+        }
         
-        default_path = new File(inputDir).getParent();
-        logger.info("Setting Input Directory to " + inputDir);
       }
     });
     btnSelect.setBounds(425, 11, 89, 20);
