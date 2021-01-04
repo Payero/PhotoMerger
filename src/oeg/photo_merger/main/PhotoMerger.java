@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
+import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.mov.QuickTimeDirectory;
 import com.drew.metadata.mp4.Mp4Directory;
@@ -88,6 +89,11 @@ public class PhotoMerger
    * created
    */
   private boolean makeMonthlyDirs = true;
+  /**
+   * Flag indicating whether or not to skip those images or videos that failed
+   * when attempting to get metadata information
+   */
+  private boolean keepFailedMedia = true;
   
   /**
    * Parses the creation date used by QuickTime
@@ -150,7 +156,7 @@ public class PhotoMerger
       int startIndx, String prefix, Level level)
   {
     this(inputDir, outDir, mergeDir, startIndx, prefix, level, 
-        false, true, true);
+        false, true, true, true);
   }
 
   /**
@@ -172,11 +178,12 @@ public class PhotoMerger
    * @param avoidDup avoids copying more than one file with the same date taken
    *        and the same file size
    * @param mkDirs makes year/monthly directories based on the pictures date
-   * 
+   * @param keepFailed indicates to whether or to keep media files without
+   *        metadata
    */  
   public PhotoMerger(String inputDir, String outDir, String mergeDir, 
-      int startIndx, String prefix, Level level, 
-      boolean useLastModDate, boolean remDups, boolean mkDirs)
+      int startIndx, String prefix, Level level, boolean useLastModDate, 
+      boolean remDups, boolean mkDirs, boolean keepFailed)
   {
     try
     {
@@ -188,7 +195,7 @@ public class PhotoMerger
       this.useLastModifiedDate(useLastModDate);
       this.removeDuplicates(remDups);
       this.makeMonthlyDirectories(mkDirs);
-      
+      this.keepFailedMedia(keepFailed);
       this.processRequest();
     }
     catch( IOException e)
@@ -345,18 +352,6 @@ public class PhotoMerger
   }
   
   /**
-   * Makes monthly directories based on when the pictures where taken
-   * 
-   * @param mkDirs flag indicating whether or not to create monthly directories 
-   *        based on when the pictures where taken
-   */
-  public void makeMonthlyDirectories( boolean mkDirs )
-  {
-    this.makeMonthlyDirs = mkDirs;
-  }
-  
-  
-  /**
    * Gets the flag to whether skip files taken at the same time and
    * that have the same size.
    * 
@@ -367,6 +362,53 @@ public class PhotoMerger
     return this.avoidDups;
   }
   
+  /**
+   * Makes monthly directories based on when the pictures where taken
+   * 
+   * @param mkDirs flag indicating whether or not to create monthly directories 
+   *        based on when the pictures where taken
+   */
+  public void makeMonthlyDirectories( boolean mkDirs )
+  {
+    this.makeMonthlyDirs = mkDirs;
+  }
+  
+  /**
+   * Gets the flag determining to make monthly directories based on when the 
+   * pictures where taken
+   * 
+   * @return a flag indicating whether or not to create monthly directories 
+   *        based on when the pictures where taken
+   */
+  public boolean makeMonthlyDirectories()
+  {
+    return this.makeMonthlyDirs;
+  }
+  
+  
+  /**
+   * Sets the flag indicating whether or not to keep media files whose metadata
+   * could not be extracted
+   * 
+   * @param keepFailed flag indicating whether or not to keep media files whose 
+   *        metadata could not be extracted
+   */
+  public void keepFailedMedia( boolean keepFailed )
+  {
+    this.keepFailedMedia = keepFailed;
+  }
+  
+  /**
+   * Gets the flag indicating whether or not to keep media files whose metadata
+   * could not be extracted
+   * 
+   * @return a flag indicating whether or not to keep media files whose 
+   *        metadata could not be extracted
+   */
+  public boolean keepFailedMedia()
+  {
+    return this.keepFailedMedia;
+  }
   
   /**
    * Gets the start index used to generate file names
@@ -436,6 +478,10 @@ public class PhotoMerger
         title = "Metadata extraction failed, " + this.failedExtr.size() + " files skipped";
 
       this.createAndShowSkippedFiles(title, this.failedExtr);
+      if( this.keepFailedMedia )
+      {
+        
+      }
       if( this.avoidDups )
       {
         title = this.dupFiles.size() +  " Duplicate Files Avoided";
@@ -493,9 +539,14 @@ public class PhotoMerger
       
       if( this.makeMonthlyDirs )
       {
+        String path = this.outputDir + File.separator;
         Date taken = item.getDateTaken();
-        String path = this.outputDir + File.separator + 
-                            this.folderFormatter.format(taken);
+        
+        if ( taken != null ) 
+         path += this.folderFormatter.format(taken);
+        else
+          path += "failed";
+        
         Files.createDirectories(Paths.get(path));
         name = path + File.separator + this.prefix + "_" + 
             nextIndex + "." + item.getExtension();
@@ -588,7 +639,7 @@ public class PhotoMerger
             
             Metadata metadata = 
                 ImageMetadataReader.readMetadata( metafile );
-            //this.printMetadata(metadata);
+            this.printMetadata(metadata);
             
             Directory directory = null;
             
@@ -616,15 +667,17 @@ public class PhotoMerger
             else
             {
               date = this.getDateTimeOriginal(file);
-              if (date != null )
+              // if we were able to get the date or we are not skipping failed files
+              if (date != null || this.keepFailedMedia )
                 items.add(new PhotoItem(fname, date, ext, size));
             }
           }
           catch (Exception e)
           {
-            logger.warn("Error while processing: " + fname );
+            logger.warn("Error while processing: " + fname + ", ERROR: " + e.getMessage());
             date = this.getDateTimeOriginal(file);
-            if( date != null )
+            // if we were able to get the date or we are not skipping failed files
+            if( date != null || this.keepFailedMedia )
               items.add(new PhotoItem(fname, date, ext, size));
           }
         }
@@ -637,6 +690,22 @@ public class PhotoMerger
     return items;
   }
 
+  private void printMetadata(Metadata metadata )
+  {
+    logger.debug("Priting Metadata");
+    for (Directory directory : metadata.getDirectories()) {
+      for (Tag tag : directory.getTags()) {
+        logger.debug(String.format("\t[%s] - [%s] = %s", directory.getName(), tag.getTagName(), tag.getDescription() ) );
+//          System.out.format("[%s] - %s = %s",
+//              directory.getName(), tag.getTagName(), tag.getDescription());
+      }
+      if (directory.hasErrors()) {
+          for (String error : directory.getErrors()) {
+              System.err.format("ERROR: %s", error);
+          }
+      }
+  }
+  }
   /**
    * Last desperate attempt to get the creation date.  This is used when the 
    * metadata-extractor fails to get the date.  It first uses the ExifTool to
@@ -653,12 +722,18 @@ public class PhotoMerger
     Date date = null;
     try
     {
+      logger.info("Trying to use ExifTool to get date");
       Map<ExifTool.Tag, String> map = 
         this.exifTool.getImageMeta(file, ExifTool.Tag.DATE_TIME_ORIGINAL);
+      
       String str = map.get(ExifTool.Tag.DATE_TIME_ORIGINAL);
-      if( str.endsWith("DST") )
+      if( str != null && str.endsWith("DST") )
+      {
         str = str.substring(0,  str.length() - 4);
-      date = this.exifFormatter.parse(str);
+        date = this.exifFormatter.parse(str);
+        logger.info("Date Extracted: " + date );
+      }
+      
     }
     catch( Exception e )
     {
@@ -668,8 +743,10 @@ public class PhotoMerger
     if (date == null && this.useLastModDate )
     {
       date = new Date(file.lastModified());
+      logger.info("Using Last Modified Date: " + date);
     }
-    else
+    
+    if( date == null  && !this.keepFailedMedia )
     {
       String fname = file.getAbsolutePath();
       logger.info("Skipping file " + fname);
@@ -770,17 +847,17 @@ public class PhotoMerger
       return false;
   }
   
-  /**
-   * Runs the show, this is used for test only
-   * 
-   * @param args
-   */
-  public static void main(String[] args)
-  {
-    
-    new PhotoMerger("/home/oeg/1-img-test/dups", 
-        "/home/oeg/1-img-test/out", 
-        null, 
-        1, "TST", Level.DEBUG);
-  }
+//  /**
+//   * Runs the show, this is used for test only
+//   * 
+//   * @param args
+//   */
+//  public static void main(String[] args)
+//  {
+//    
+//    new PhotoMerger("/home/oeg/1-img-test/dups", 
+//        "/home/oeg/1-img-test/out", 
+//        null, 
+//        1, "TST", Level.DEBUG);
+//  }
 }

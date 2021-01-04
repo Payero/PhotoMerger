@@ -50,13 +50,20 @@ public class MainPhotoMerger
    *        files
    * @param prefix The prefix used when generating the name of the files
    * @param lvl The verbosity level or amount of messages print to the screen
+   * 
    */
   public MainPhotoMerger(String inputDir, String outDir, String mergeDir, 
-                         int startIndx, String prefix, String lvl)
+                         int startIndx, String prefix, String lvl,
+                         boolean useLastMod, boolean remDups, boolean makeDirs,
+                         boolean keepFailed)
   {
     String name = MainPhotoMerger.class.getName();
+    Level level = Level.getLevel("INFO");
     if( lvl != null)
+    {
       logger = PhotoMergerUtils.getLogger(name, Level.getLevel(lvl) );
+      level = Level.getLevel(lvl);
+    }
     else
       logger = PhotoMergerUtils.getLogger(name);
     
@@ -109,7 +116,8 @@ public class MainPhotoMerger
       System.err.println("The prefix is invalid");
       System.exit(-1);
     }
-    new PhotoMerger(inputDir, outDir, mergeDir, startIndx, prefix);
+    new PhotoMerger(inputDir, outDir, mergeDir, startIndx, prefix, level, 
+        useLastMod, remDups, makeDirs, keepFailed );
   }
   
   /**
@@ -136,9 +144,15 @@ public class MainPhotoMerger
   {
     Map<String, String> map = PhotoMergerUtils.parseCommandLineArgs(args);
     
-    new MainPhotoMerger( map.get("input-dir"), map.get("output-dir"), 
+    new MainPhotoMerger( map.get("input-dir"), 
+                         map.get("output-dir"), 
                          map.get("merge-dir"), 
                          Integer.parseInt(map.get("start-index")), 
-                         map.get("prefix"), map.get("debug-level") );
+                         map.get("prefix"), 
+                         map.get("debug-level"),
+                         Boolean.parseBoolean(map.get("use-last-mod-date")),
+                         Boolean.parseBoolean(map.get("remove-duplicates")),
+                         Boolean.parseBoolean(map.get("make-monthly-dirs")),
+                         Boolean.parseBoolean(map.get("keep-failed")));
   }
 }

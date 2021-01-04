@@ -287,12 +287,18 @@ public class PhotoMergerUtils
     Map<String, String> map = new HashMap<>();
     map = new HashMap<>();
     String home = System.getProperty("user.home");
+    //boolean useLastModDate, boolean remDups, boolean mkDirs
     map.put("input-dir", home); 
     map.put("output-dir", home); 
     map.put("merge-dir", null);
     map.put("start-index", Integer.toString(1) ); 
     map.put("prefix", PhotoMergerUtils.PREFIX);
+    map.put("use-last-mod-date", Boolean.toString(false));
+    map.put("remove-duplicates", Boolean.toString(true));
+    map.put("keep-failed", Boolean.toString(true));
+    map.put("make-monthly-dirs", Boolean.toString(true));
     map.put("debug-level", "INFO");
+    
     
     String configFile = "";
     
@@ -314,8 +320,16 @@ public class PhotoMergerUtils
         "The initial value to start the file numbering. Default: 1");
     Option pfx = new Option("p", "prefix", true, 
         "The prefix to use when setting the file name. Default: IMG");
+    Option useModDate = new Option("d", "use-last-mod-date", false, 
+        "If present, it uses the last modified date as the date if no other is found");
+    Option keepDups = new Option("k", "keep-duplicates", false, 
+        "If present, it keeps the duplicates otherwise it removes them");
+    Option skipMkDirs = new Option("m", "skip-make-monthly-dirs", false, 
+        "If present, it does not create monthly directories");
+    Option skipFailed = new Option("f", "skip-failed", false, 
+        "If present, it skip keeping the images without metadata");
     Option verbosity = new Option("v", "verbosity", true, 
-        "Verbosity level: [SEVERE|WARNING|INFO|FINE|FINER|FINEST]");
+        "Verbosity level: [OFF|FATAL|WARNING|INFO|DEBUG|TRACE]");
   
   
     PhotoMergerUtils.options.addOption(help);
@@ -325,9 +339,12 @@ public class PhotoMergerUtils
     PhotoMergerUtils.options.addOption(config);
     PhotoMergerUtils.options.addOption(indx);
     PhotoMergerUtils.options.addOption(pfx);
+    PhotoMergerUtils.options.addOption(useModDate);
+    PhotoMergerUtils.options.addOption(keepDups);
+    PhotoMergerUtils.options.addOption(skipFailed);
+    PhotoMergerUtils.options.addOption(skipMkDirs);
     PhotoMergerUtils.options.addOption(verbosity);
     
-  
     /**
      * CLI Parser
      */
@@ -339,6 +356,7 @@ public class PhotoMergerUtils
       {
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp("MainPhotoMerger", options);
+        System.exit(0);
       } 
       else
       {
@@ -379,17 +397,45 @@ public class PhotoMergerUtils
           if (props.getProperty("start-index") != null)
             map.put("start-index", props.getProperty("start-index") );
           
+          if (props.getProperty("use-last-mod-date") != null)
+            map.put("use-last-mod-date", props.getProperty("use-last-mod-date") );
+
+          // need the opposite of what we are getting
+          if (props.getProperty("keep-duplicates") != null)
+          {
+            String val = props.getProperty("keep-duplicates");
+            boolean rem = !Boolean.parseBoolean(val);
+            map.put("remove-duplicates",  Boolean.toString(rem) );
+          }
+          
+          // need the opposite of what we are getting
+          if (props.getProperty("skip-make-monthly-dirs") != null)
+          {
+            String val = props.getProperty("skip-make-monthly-dirs");
+            boolean mk = !Boolean.parseBoolean(val);
+            map.put("make-monthly-dirs",  Boolean.toString(mk) );
+          }
+
+          // need the opposite of what we are getting
+          if (props.getProperty("skip-failed") != null)
+          {
+            String val = props.getProperty("skip-failed");
+            boolean failed = !Boolean.parseBoolean(val);
+            map.put("keep-failed",  Boolean.toString(failed) );
+          }
+          
           if (props.getProperty("verbosity") != null)
           {
             String tmp =  props.getProperty("verbosity");
             switch(tmp)
             {
-              case "SEVERE":
+              case "OFF":
+              case "FATAL":
+              case "ERROR":
               case "WARNING":
               case "INFO":
-              case "FINE":
-              case "FINER":
-              case "FINEST":
+              case "DEBUG":
+              case "TRACE":
                 map.put("debug-level", tmp);
                 break;
               default:
@@ -414,18 +460,33 @@ public class PhotoMergerUtils
         if (line.hasOption("p"))
           map.put("prefix", line.getOptionValue("p") );
         
+        if (line.hasOption("d") )
+          map.put("use-last-mod-date", Boolean.toString(true) );
+
+        // if --keep-duplicates is found then set remove-duplicates to false
+        if (line.hasOption("k") )
+          map.put("remove-duplicates", Boolean.toString(false) );
         
+        // if --skip-make-monthly-dirs is found then set make-monthly-dirs to 
+        // false
+        if (line.hasOption("m") )
+          map.put("make-monthly-dirs", Boolean.toString(false) );
+
+        if (line.hasOption("f") )
+          map.put("keep-failed", Boolean.toString(false) );
+
         if (line.hasOption("v"))
         {
           String tmp = line.getOptionValue("v");
           switch(tmp)
           {
-            case "SEVERE":
+            case "OFF":
+            case "FATAL":  
+            case "ERROR":
             case "WARNING":
             case "INFO":
-            case "FINE":
-            case "FINER":
-            case "FINEST":
+            case "DEBUG":
+            case "TRACE":
               map.put("debug-level", tmp);
               break;
             default:

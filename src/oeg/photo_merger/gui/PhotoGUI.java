@@ -73,6 +73,7 @@ public class PhotoGUI extends JFrame
   private String default_path = null;
   private JCheckBox useLastModChkBox = new JCheckBox("Use last modified date.");
   private JCheckBox avoidDuplicatesChkBox = new JCheckBox("Avoid Duplicates.");
+  private JCheckBox keepFailedChkBox = new JCheckBox("Keep Failed.");
   private JCheckBox monthlyChkBox = new JCheckBox("Create Monthly Folders.");
   private JTextField tolerance_textField;
   
@@ -322,7 +323,7 @@ public class PhotoGUI extends JFrame
     JLabel lblStartIndex = new JLabel("Start Index");
     lblStartIndex.setToolTipText("The index number to begin the sequence");
     //lblStartIndex.setBounds(10, 132, 90, 20);
-    lblStartIndex.setBounds(330, 104, 90, 20);
+    lblStartIndex.setBounds(335, 104, 90, 20);
     controlsPanel.add(lblStartIndex);
     
     startIndx_textField = 
@@ -333,6 +334,14 @@ public class PhotoGUI extends JFrame
     startIndx_textField.setBounds(425, 104, 60, 20);
     controlsPanel.add(startIndx_textField);
     
+    /***********************************************************************
+     ************             Keep Failed Media                 ************
+     ***********************************************************************/
+    this.keepFailedChkBox.setToolTipText("Keeps media files without metadata");
+    this.keepFailedChkBox.setBounds(520, 104, 150, 20);
+    this.keepFailedChkBox.setSelected(true);
+    controlsPanel.add(this.keepFailedChkBox);
+    
     
     /***********************************************************************
      ************               Tolerance                    ************
@@ -342,14 +351,15 @@ public class PhotoGUI extends JFrame
                  "Greater % might remove pictures taken in rapid shutter mode";
     lblTolerance.setToolTipText(tip);
     
-    lblTolerance.setBounds(520, 107, 100, 20);
+    lblTolerance.setBounds(10, 140, 100, 20);
     controlsPanel.add(lblTolerance);
     
     tolerance_textField = new JTextField( Double.toString(tolerance) );
     tolerance_textField.setToolTipText(tip);
     tolerance_textField.setColumns(4);
-    tolerance_textField.setBounds(620, 107, 50, 20);
+    tolerance_textField.setBounds(179, 140, 50, 20);
     controlsPanel.add(tolerance_textField);
+    
     
     /***********************************************************************
      ************             Verbosity Level                   ************
@@ -357,13 +367,13 @@ public class PhotoGUI extends JFrame
     JLabel lblVerbosity = new JLabel("Verbosity");
     lblVerbosity.setToolTipText("How much output needs to be sent to the screen");
     //lblVerbosity.setBounds(305, 120, 75, 14);
-    lblVerbosity.setBounds(10, 140, 75, 20);
+    lblVerbosity.setBounds(250, 140, 75, 20);
     controlsPanel.add(lblVerbosity);
     
     final JComboBox<Level> comboBox = new JComboBox<Level>();
     comboBox.setToolTipText("How much output needs to be sent to the screen");
     //comboBox.setBounds(425, 117, 90, 20);
-    comboBox.setBounds(179, 140, 90, 20);
+    comboBox.setBounds(355, 140, 90, 20);
     comboBox.addItem(Level.FATAL);
     comboBox.addItem(Level.ERROR);
     comboBox.addItem(Level.WARN);
@@ -397,7 +407,7 @@ public class PhotoGUI extends JFrame
         });
       }
     });
-    btnPropsViewer.setBounds(425, 170, 150, 23);
+    btnPropsViewer.setBounds(425, 173, 150, 23);
     controlsPanel.add(btnPropsViewer);
     
     comboBox.addActionListener(new ActionListener()
@@ -420,7 +430,7 @@ public class PhotoGUI extends JFrame
         dbgTextArea.setText("");
       }
     });
-    btnClearLog.setBounds(585, 170, 120, 23);
+    btnClearLog.setBounds(585, 173, 120, 23);
     
 
     /***********************************************************************
@@ -428,7 +438,7 @@ public class PhotoGUI extends JFrame
      ***********************************************************************/
     JButton btnGo = new JButton("Go");
     btnGo.setToolTipText("Performs the operation (rename or merge)");
-    btnGo.setBounds(10, 170, 79, 23);
+    btnGo.setBounds(10, 173, 79, 23);
     controlsPanel.add(btnGo);
     
     JButton resetBtn = new JButton("Reset");
@@ -439,7 +449,7 @@ public class PhotoGUI extends JFrame
         resetValues();
       }
     });
-    resetBtn.setBounds(99, 170, 79, 23);
+    resetBtn.setBounds(99, 173, 79, 23);
     controlsPanel.add(resetBtn);
     
     
@@ -452,7 +462,7 @@ public class PhotoGUI extends JFrame
         closeFrame();
       }
     });
-    btnCancel.setBounds(188, 170, 79, 23);
+    btnCancel.setBounds(188, 173, 79, 23);
     controlsPanel.add(btnCancel);
     
     
@@ -491,6 +501,7 @@ public class PhotoGUI extends JFrame
         boolean useIt = useLastModChkBox.isSelected();
         boolean remDup = avoidDuplicatesChkBox.isSelected();
         boolean mkDirs = monthlyChkBox.isSelected();
+        boolean keepFailed = keepFailedChkBox.isSelected();
         
         try
         {
@@ -519,13 +530,30 @@ public class PhotoGUI extends JFrame
         buf.append("Output Directory ");
         buf.append( outDir );
         buf.append(", ");
-        
+
+        buf.append("Start Index ");
+        buf.append( indx );
+        buf.append(", ");
+
         buf.append("Prefix ");
         buf.append( prefix );
         buf.append(", ");
         
-        buf.append("Start Index ");
-        buf.append( indx );
+        
+        buf.append("Use Last Mod. Date ");
+        buf.append( useIt );
+        buf.append(", ");
+        
+        buf.append("Avoid Dups. ");
+        buf.append( remDup );
+        buf.append(", ");
+
+        buf.append("Make Monthly Dirs. ");
+        buf.append( mkDirs );
+        buf.append(", ");
+
+        buf.append("Keep Failed ");
+        buf.append( keepFailed );
         buf.append(", ");
         
         buf.append("Verbosity: ");
@@ -570,7 +598,8 @@ public class PhotoGUI extends JFrame
         else
         {
           new PhotoMerger(inDir, outDir, mergeDir, startIndex, prefix, 
-              (Level)comboBox.getSelectedItem(), useIt, remDup, mkDirs);
+              (Level)comboBox.getSelectedItem(), 
+              useIt, remDup, mkDirs, keepFailed);
           
           if( mergeDir == null || mergeDir.length() == 0 )
             showMessage("Files were renamed successfullly");

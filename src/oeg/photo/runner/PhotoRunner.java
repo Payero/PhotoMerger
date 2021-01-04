@@ -66,7 +66,7 @@ public class PhotoRunner
           this.logger.debug("Output Dir: " + path);
           
           new PhotoMerger(file.getAbsolutePath(), path, null, start, prefix, Level.DEBUG,
-              useLastMod, remDups, makeDirs);
+              useLastMod, remDups, makeDirs, false);
           
         }
       }

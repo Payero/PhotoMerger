@@ -77,10 +77,7 @@ public final class TextAreaAppender extends AbstractAppender
         this.textArea.append(msg);
         this.textArea.update(this.textArea.getGraphics());
       }
-      else
-      {
-        System.err.println("JTextArea no set: " + msg);
-      }
+
     }
     catch (Exception ex)
     {
