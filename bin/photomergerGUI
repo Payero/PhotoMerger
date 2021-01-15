@@ -28,5 +28,5 @@ cd $saveddir
 PM_HOME=`cd "$PM_HOME" && pwd`
 
 
-java -jar ${PM_HOME}/lib/photo-merger-CLI.jar "$@"
+java -jar ${PM_HOME}/lib/photo-merger-GUI.jar
 

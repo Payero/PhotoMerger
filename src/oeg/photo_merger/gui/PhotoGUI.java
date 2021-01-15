@@ -31,6 +31,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import oeg.photo.runner.PhotoMergerArgs;
 import oeg.photo_merger.main.PhotoMerger;
 import oeg.photo_merger.utils.PhotoMergerUtils;
 import oeg.photo_merger.utils.TextAreaAppender;
@@ -95,10 +96,10 @@ public class PhotoGUI extends JFrame
       {
         try
         {
-          Map<String, String> map = 
+          PhotoMergerArgs photoArgs = 
               PhotoMergerUtils.parseCommandLineArgs(finalArgs);
           
-          PhotoGUI frame = new PhotoGUI(map);
+          PhotoGUI frame = new PhotoGUI(photoArgs);
           frame.setVisible(true);
         }
         catch (Exception e)
@@ -112,14 +113,14 @@ public class PhotoGUI extends JFrame
   /**
    * Create the frame.
    */
-  public PhotoGUI(Map<String, String> cliMap)
+  public PhotoGUI(PhotoMergerArgs args)
   {
-    String inputDir = cliMap.get("input-dir");
-    String mergeDir = cliMap.get("merge-dir");
-    String outputDir = cliMap.get("output-dir");
-    String prefix = cliMap.get("prefix");
-    String startIndx = cliMap.get("start-index");
-    String debugLvl = cliMap.get("debug-level");
+    String inputDir = args.getInputDir();
+    String mergeDir = args.getMergeDir();
+    String outputDir = args.getOutputDir();
+    String prefix = args.getPrefix();
+    int startIndx = args.getStartIndex() ;
+    String debugLvl = args.getVerbosityLevel().name();
     double tolerance = PhotoMerger.FILESIZE_PERCENT_TOLERANCE;
     
     // creates the text area to display logger messages
@@ -506,7 +507,7 @@ public class PhotoGUI extends JFrame
         try
         {
           double tolerance = Double.parseDouble( tolerance_textField.getText() );
-          if( tolerance < 0 || tolerance > 100 )
+          if( tolerance < 0 || tolerance > 1 )
             throw new Exception();
           logger.info("Setting the Tolerance to " + tolerance + " %");
           PhotoMerger.FILESIZE_PERCENT_TOLERANCE = tolerance;
@@ -597,9 +598,17 @@ public class PhotoGUI extends JFrame
         }
         else
         {
-          new PhotoMerger(inDir, outDir, mergeDir, startIndex, prefix, 
-              (Level)comboBox.getSelectedItem(), 
-              useIt, remDup, mkDirs, keepFailed);
+          boolean showWindows = true;
+          PhotoMergerArgs args = new PhotoMergerArgs(inDir, outDir, mergeDir, prefix, startIndex);
+          args.setVerbosityLevel((Level)comboBox.getSelectedItem() );
+          args.setUseLastModDate(useIt);
+          args.setRemoveDuplicates(remDup);
+          args.setKeepFailed(keepFailed);
+          args.setMakeMonthlyDirs(mkDirs);
+          args.setShowPopupWindows(showWindows);
+          
+          PhotoMerger pm = new PhotoMerger( args );
+          pm.processRequest();
           
           if( mergeDir == null || mergeDir.length() == 0 )
             showMessage("Files were renamed successfullly");

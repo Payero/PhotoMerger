@@ -26,6 +26,18 @@ import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.builder.api.AppenderComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
+import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
+import org.apache.logging.log4j.core.config.builder.api.FilterComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.api.LayoutComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.api.LoggerComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.api.RootLoggerComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
+
+import oeg.photo.runner.PhotoMergerArgs;
 
 /**
  * Utility class containing a collection of static methods required to perform
@@ -55,6 +67,9 @@ public class PhotoMergerUtils
    * Stores the object responsible for sending messages to the handlers
    */
   private static Logger logger = null;
+  
+  private static ConfigurationBuilder<BuiltConfiguration> builder = 
+      ConfigurationBuilderFactory.newConfigurationBuilder();
   
   /**
    * Stores all the valid image extensions.  
@@ -143,14 +158,32 @@ public class PhotoMergerUtils
    */
   public static Logger getLogger(String name , Level level)
   {
-    System.err.println("Getting a logger called " + name);
+    PhotoMergerUtils.LEVEL = level;
     
     if( logger == null )
-      logger = LogManager.getLogger(name);
-    
-    PhotoMergerUtils.LEVEL = level;
+    {
+      LayoutComponentBuilder standard = builder.newLayout("PatternLayout");
+      standard.addAttribute("pattern", "%d{HH:mm:ss.SSS} [%-6p] (%F:%L).%M – %m%n");
 
-     logger.atLevel(level);
+      AppenderComponentBuilder console = 
+          builder.newAppender("stdout", "Console")
+          .add(standard);
+      builder.add(console);
+      
+      RootLoggerComponentBuilder rootLogger = builder.newRootLogger(Level.WARN);
+      rootLogger.add(builder.newAppenderRef("stdout"));
+      builder.add(rootLogger);
+      
+      LoggerComponentBuilder loggerBldr = builder.newLogger(name, level);
+      loggerBldr.add(builder.newAppenderRef("stdout"));
+      loggerBldr.addAttribute("additivity", false);
+      builder.add(loggerBldr);
+      
+      Configurator.initialize(builder.build());
+      
+      logger = LogManager.getLogger(name);
+      logger.atLevel(level);
+    }
     
     return logger;
   }
@@ -282,25 +315,11 @@ public class PhotoMergerUtils
    */
   private static Options options = new Options();
   
-  public static Map<String, String> parseCommandLineArgs(String[] args)
+  public static PhotoMergerArgs parseCommandLineArgs(String[] args)
   {
-    Map<String, String> map = new HashMap<>();
-    map = new HashMap<>();
-    String home = System.getProperty("user.home");
-    //boolean useLastModDate, boolean remDups, boolean mkDirs
-    map.put("input-dir", home); 
-    map.put("output-dir", home); 
-    map.put("merge-dir", null);
-    map.put("start-index", Integer.toString(1) ); 
-    map.put("prefix", PhotoMergerUtils.PREFIX);
-    map.put("use-last-mod-date", Boolean.toString(false));
-    map.put("remove-duplicates", Boolean.toString(true));
-    map.put("keep-failed", Boolean.toString(true));
-    map.put("make-monthly-dirs", Boolean.toString(true));
-    map.put("debug-level", "INFO");
-    
     
     String configFile = "";
+    PhotoMergerArgs photoArgs = null;
     
     /**
      * CLI Options
@@ -328,6 +347,10 @@ public class PhotoMergerUtils
         "If present, it does not create monthly directories");
     Option skipFailed = new Option("f", "skip-failed", false, 
         "If present, it skip keeping the images without metadata");
+    Option showWindows = new Option("w", "show-popup-windows", false, 
+        "If present, creates the popup windows showing duplicate and failed files");
+    Option tolerance = new Option("t", "tolerance", true, 
+        "The tolerance when comparing pictures. Default: 0.3");
     Option verbosity = new Option("v", "verbosity", true, 
         "Verbosity level: [OFF|FATAL|WARNING|INFO|DEBUG|TRACE]");
   
@@ -339,10 +362,12 @@ public class PhotoMergerUtils
     PhotoMergerUtils.options.addOption(config);
     PhotoMergerUtils.options.addOption(indx);
     PhotoMergerUtils.options.addOption(pfx);
+    PhotoMergerUtils.options.addOption(tolerance);
     PhotoMergerUtils.options.addOption(useModDate);
     PhotoMergerUtils.options.addOption(keepDups);
     PhotoMergerUtils.options.addOption(skipFailed);
     PhotoMergerUtils.options.addOption(skipMkDirs);
+    PhotoMergerUtils.options.addOption(showWindows);
     PhotoMergerUtils.options.addOption(verbosity);
     
     /**
@@ -369,131 +394,58 @@ public class PhotoMergerUtils
         if (line.hasOption("c"))
         {
           configFile = line.getOptionValue("c");
-          Properties props = new Properties();
-          FileInputStream fis = null;
-  
-          try
-          {
-            fis = new FileInputStream(configFile);
-            props.load(fis);
-            fis.close();
-          } catch (IOException e)
-          {
-            e.printStackTrace();
-          }
-  
-          if (props.getProperty("input-dir") != null)
-            map.put("input-dir", props.getProperty("input-dir") );
-  
-          if (props.getProperty("merge-dir") != null)
-            map.put("merge-dir", props.getProperty("merge-dir") );
-  
-          if (props.getProperty("output-dir") != null)
-            map.put("output-dir", props.getProperty("output-dir") );
-          
-          if (props.getProperty("prefix") != null)
-            map.put("prefix", props.getProperty("prefix") );
-          
-          if (props.getProperty("start-index") != null)
-            map.put("start-index", props.getProperty("start-index") );
-          
-          if (props.getProperty("use-last-mod-date") != null)
-            map.put("use-last-mod-date", props.getProperty("use-last-mod-date") );
-
-          // need the opposite of what we are getting
-          if (props.getProperty("keep-duplicates") != null)
-          {
-            String val = props.getProperty("keep-duplicates");
-            boolean rem = !Boolean.parseBoolean(val);
-            map.put("remove-duplicates",  Boolean.toString(rem) );
-          }
-          
-          // need the opposite of what we are getting
-          if (props.getProperty("skip-make-monthly-dirs") != null)
-          {
-            String val = props.getProperty("skip-make-monthly-dirs");
-            boolean mk = !Boolean.parseBoolean(val);
-            map.put("make-monthly-dirs",  Boolean.toString(mk) );
-          }
-
-          // need the opposite of what we are getting
-          if (props.getProperty("skip-failed") != null)
-          {
-            String val = props.getProperty("skip-failed");
-            boolean failed = !Boolean.parseBoolean(val);
-            map.put("keep-failed",  Boolean.toString(failed) );
-          }
-          
-          if (props.getProperty("verbosity") != null)
-          {
-            String tmp =  props.getProperty("verbosity");
-            switch(tmp)
-            {
-              case "OFF":
-              case "FATAL":
-              case "ERROR":
-              case "WARNING":
-              case "INFO":
-              case "DEBUG":
-              case "TRACE":
-                map.put("debug-level", tmp);
-                break;
-              default:
-                System.err.println("Invalid verbosity option: " + tmp);
-                System.exit(-2);
-            }
-          }
+          File file = new File(configFile);
+          if( file.isFile() )
+            photoArgs = new PhotoMergerArgs(file);
         }
-  
-        if (line.hasOption("i"))
-          map.put("input-dir", line.getOptionValue("i") );
-  
-        if (line.hasOption("m"))
-          map.put("merge-dir", line.getOptionValue("m") );
-  
-        if (line.hasOption("o"))
-          map.put("output-dir", line.getOptionValue("o") );
+        // arguments were not created using the config file
+        if ( photoArgs == null )
+        {
+          String input = null;
+          String output = null;
+          
+          if (line.hasOption("i"))
+            input = line.getOptionValue("i");
+    
+          if (line.hasOption("o"))
+            output = line.getOptionValue("o");
+          
+          photoArgs = new PhotoMergerArgs(input, output);
+        }
         
+        if (line.hasOption("m"))
+          photoArgs.setMergeDir( line.getOptionValue("m") );
+  
         if (line.hasOption("s"))
-          map.put("start-index", line.getOptionValue("s") );
+          photoArgs.setStartIndex( line.getOptionValue("s") );
         
         if (line.hasOption("p"))
-          map.put("prefix", line.getOptionValue("p") );
+          photoArgs.setPrefix( line.getOptionValue("p") );
+        
+        if (line.hasOption("t"))
+          photoArgs.setTolerance( line.getOptionValue("t") );
         
         if (line.hasOption("d") )
-          map.put("use-last-mod-date", Boolean.toString(true) );
+          photoArgs.setUseLastModDate( true );
 
         // if --keep-duplicates is found then set remove-duplicates to false
         if (line.hasOption("k") )
-          map.put("remove-duplicates", Boolean.toString(false) );
+          photoArgs.setRemoveDuplicates(false);
         
         // if --skip-make-monthly-dirs is found then set make-monthly-dirs to 
         // false
         if (line.hasOption("m") )
-          map.put("make-monthly-dirs", Boolean.toString(false) );
+          photoArgs.setMakeMonthlyDirs(false);
 
         if (line.hasOption("f") )
-          map.put("keep-failed", Boolean.toString(false) );
+          photoArgs.setKeepFailed(false);
+        
+        if (line.hasOption("w") )
+          photoArgs.setShowPopupWindows(true);
 
         if (line.hasOption("v"))
-        {
-          String tmp = line.getOptionValue("v");
-          switch(tmp)
-          {
-            case "OFF":
-            case "FATAL":  
-            case "ERROR":
-            case "WARNING":
-            case "INFO":
-            case "DEBUG":
-            case "TRACE":
-              map.put("debug-level", tmp);
-              break;
-            default:
-              System.err.println("Invalid verbosity option: " + tmp);
-              System.exit(-2);
-          }
-        }
+          photoArgs.setVerbosityLevel(line.getOptionValue("v") );
+        
       }
     } 
     catch (ParseException exp)
@@ -502,7 +454,7 @@ public class PhotoMergerUtils
       System.err.println("Parsing failed. Reason: " + exp.getMessage());
     }
     
-    return map;
+    return photoArgs;
   }
   
   /**

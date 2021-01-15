@@ -11,6 +11,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 
 import com.drew.imaging.ImageMetadataReader;
@@ -32,6 +32,7 @@ import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.mov.QuickTimeDirectory;
 import com.drew.metadata.mp4.Mp4Directory;
 
+import oeg.photo.runner.PhotoMergerArgs;
 import oeg.photo_merger.utils.ExifTool;
 import oeg.photo_merger.utils.PhotoItem;
 import oeg.photo_merger.utils.PhotoMergerUtils;
@@ -54,18 +55,13 @@ public class PhotoMerger
    * What is the percentage difference on the file size if avoiding duplicates
    */
   public static double FILESIZE_PERCENT_TOLERANCE = 0.3;
-  /* The name of the input directory where the image files are located */
-  private String inputDir = null;
-  /* The name of the directory where the image files will be stored */
-  private String outputDir = null;
-  /* The name of the directory where the image files are located */
-  private String mergeDir = null;
-  /* The prefix to be used to generate file names */
-  private String prefix = null;
-  /* The index number to start the sequence to generate file names */
-  private int startIndex = 1;
+
   /* The object used to print messages to the screen */
-  private static Logger logger = PhotoMergerUtils.getLogger("PhotoMerger");
+  private static Logger logger = null;
+  /**
+   * Stores all the runtime parameters used by the PhotoMerger object
+   */
+  private PhotoMergerArgs args = null;
   /**
    * Stores a list of file names that could not be processed
    */
@@ -74,27 +70,6 @@ public class PhotoMerger
    * Stores a list of file names that could not be processed
    */
   private List<String> dupFiles = new ArrayList<>();
-  /**
-   * Whether or not it should use the last modified date in case the actual 
-   * property of when it was taken can't be found
-   */
-  private boolean useLastModDate = false;
-  /**
-   * Whether or not to remove files taken at the exact same time with the exact
-   * size
-   */
-  private boolean avoidDups = true;
-  /**
-   * Whether or not to create monthly directories based on when the picture was
-   * created
-   */
-  private boolean makeMonthlyDirs = true;
-  /**
-   * Flag indicating whether or not to skip those images or videos that failed
-   * when attempting to get metadata information
-   */
-  private boolean keepFailedMedia = true;
-  
   /**
    * Parses the creation date used by QuickTime
    */
@@ -130,314 +105,26 @@ public class PhotoMerger
    *        files
    * @param prefix The prefix used when generating the name of the files
    */
-  public PhotoMerger(String inputDir, String outDir, String mergeDir, 
-                     int startIndx, String prefix)
+  public PhotoMerger(PhotoMergerArgs args)
   {
-    this(inputDir, outDir, mergeDir, startIndx, prefix, 
-        Level.INFO);
+    if( args == null )
+      throw new IllegalArgumentException("The arguments cannot be null");
+    logger = 
+        PhotoMergerUtils.getLogger("PhotoMerger", args.getVerbosityLevel() );
+    this.args = args;
+    PhotoMerger.FILESIZE_PERCENT_TOLERANCE = this.args.getTolerance();
   }
   
   /**
-   * Runs the application using all the arguments given by the user.  If all
-   * the arguments are set properly it runs the command line.
+   * Gets the object containing the runtime configuration 
    * 
-   * @param inputDir The name of the directory containing all the files to 
-   *        rename or merge
-   * @param outDir The name of the directory to place the files after renaming 
-   *        or merging them
-   * @param mergeDir The name of the directory containing all the files to 
-   *        merge
-   * @param startIndx The index number used when generating the name of the 
-   *        files
-   * @param prefix The prefix used when generating the name of the files
-   * @param lvl The verbosity level or amount of messages print to the screen
-   */  
-  public PhotoMerger(String inputDir, String outDir, String mergeDir, 
-      int startIndx, String prefix, Level level)
+   * @return the object containing the runtime configuration
+   */
+  public PhotoMergerArgs getPhotoMergerArguments()
   {
-    this(inputDir, outDir, mergeDir, startIndx, prefix, level, 
-        false, true, true, true);
-  }
-
-  /**
-   * Runs the application using all the arguments given by the user.  If all
-   * the arguments are set properly it runs the command line.
-   * 
-   * @param inputDir The name of the directory containing all the files to 
-   *        rename or merge
-   * @param outDir The name of the directory to place the files after renaming 
-   *        or merging them
-   * @param mergeDir The name of the directory containing all the files to 
-   *        merge
-   * @param startIndx The index number used when generating the name of the 
-   *        files
-   * @param prefix The prefix used when generating the name of the files
-   * @param lvl The verbosity level or amount of messages print to the screen
-   * @param useLastModDate use the last modified date for files that it could
-   *        not be retrieved
-   * @param avoidDup avoids copying more than one file with the same date taken
-   *        and the same file size
-   * @param mkDirs makes year/monthly directories based on the pictures date
-   * @param keepFailed indicates to whether or to keep media files without
-   *        metadata
-   */  
-  public PhotoMerger(String inputDir, String outDir, String mergeDir, 
-      int startIndx, String prefix, Level level, boolean useLastModDate, 
-      boolean remDups, boolean mkDirs, boolean keepFailed)
-  {
-    try
-    {
-      this.setInputDir(inputDir);
-      this.setOutputDir(outDir);
-      this.setMergeDir(mergeDir);
-      this.setStartIndex(startIndx);
-      this.setPrefix(prefix);
-      this.useLastModifiedDate(useLastModDate);
-      this.removeDuplicates(remDups);
-      this.makeMonthlyDirectories(mkDirs);
-      this.keepFailedMedia(keepFailed);
-      this.processRequest();
-    }
-    catch( IOException e)
-    {
-      logger.error(e.getMessage());
-      e.printStackTrace();
-    }
+    return this.args;
   }
   
-  /**
-   * Gets the selected input directory
-   * 
-   * @return the selected input directory
-   */
-  public String getInputDir()
-  {
-    return inputDir;
-  }
-  
-  /**
-   * Sets the selected input directory
-   * 
-   * @param inputDir the selected input directory
-   */
-  public void setInputDir(String inputDir)
-  {
-    logger.info("Setting input Directory to " + inputDir);
-    if( this.testDirectory(inputDir) )
-      this.inputDir = inputDir;
-  }
-
-  /**
-   * Gets the selected output directory
-   * 
-   * @return the selected output directory
-   */
-  public String getOutputDir()
-  {
-    return outputDir;
-  }
-
-  /**
-   * Sets the selected input directory
-   * 
-   * @param outptuDir the selected output directory
-   */
-  public void setOutputDir(String outputDir) throws IOException
-  {
-    logger.debug("Setting Output to " + outputDir);
-    if( outputDir == null || outputDir.length() == 0 )
-    {
-      logger.info("Setting output directory to " + this.inputDir);
-      this.outputDir = inputDir;
-    }
-    else
-    {
-      logger.info("Setting output directory to " + outputDir);
-//      if( this.testDirectory(outputDir ) )
-        this.outputDir = outputDir;
-    }
-    // appends the directory separator if not present
-    Files.createDirectories(Paths.get(this.outputDir));
-    
-    if( !this.outputDir.endsWith(File.separator) )
-      this.outputDir += File.separator;
-    
-    logger.debug("Output Directory set to " + this.outputDir);
-  }
-
-  /**
-   * Gets the selected merge directory
-   * 
-   * @return the selected merge directory
-   */
-  public String getMergeDir()
-  {
-    return mergeDir;
-  }
-
-  /**
-   * Sets the selected input directory
-   * 
-   * @return the selected merge directory
-   */
-  public void setMergeDir(String mergeDir)
-  {
-    logger.info("Setting merge directory to " + mergeDir);
-    if( this.testDirectory(mergeDir ) )
-      this.mergeDir = mergeDir;
-  }
-
-  /**
-   * Gets the prefix used to generate file names
-   * 
-   * @return the prefix used to generate file names
-   */
-  public String getPrefix()
-  {
-    return prefix;
-  }
-
-  /**
-   * Sets the prefix used to generate file names
-   * 
-   * @param the prefix used to generate file names
-   */
-  public void setPrefix(String prefix)
-  {
-    logger.info("Setting prefix to " + prefix);
-    if( prefix != null )
-    {
-      this.prefix = prefix;
-    }
-    else
-    {
-      logger.info("The prefix is not set, using default IMG");
-      this.prefix = "IMG_";
-    }
-  }
-  
-  /**
-   * Sets whether or not to use the last modified date for those files whose 
-   * metadata could not be retrieved.
-   * 
-   * @param useIt whether or not to use the last modified date for those files 
-   *        whose metadata could not be retrieved
-   */
-  public void useLastModifiedDate( boolean useIt )
-  {
-    this.useLastModDate = useIt;
-  }
-
-  /**
-   * Gets whether or not to use the last modified date for those files whose 
-   * metadata could not be retrieved.
-   * 
-   * @return whether or not to use the last modified date for those files 
-   *         whose metadata could not be retrieved
-   */
-  public boolean useLastModifiedDate()
-  {
-    return this.useLastModDate;
-  }
-
-  /**
-   * Sets the requirement to whether to copy files taken at the same time and
-   * that have the same size.
-   * 
-   * @param remDups flag indicating to copy duplicate files or not
-   */
-  public void removeDuplicates( boolean avoidDups )
-  {
-    this.avoidDups = avoidDups;
-  }
-  
-  /**
-   * Gets the flag to whether skip files taken at the same time and
-   * that have the same size.
-   * 
-   * @return true if the program is removing duplicates or false otherwise
-   */
-  public boolean removeDuplicates( )
-  {
-    return this.avoidDups;
-  }
-  
-  /**
-   * Makes monthly directories based on when the pictures where taken
-   * 
-   * @param mkDirs flag indicating whether or not to create monthly directories 
-   *        based on when the pictures where taken
-   */
-  public void makeMonthlyDirectories( boolean mkDirs )
-  {
-    this.makeMonthlyDirs = mkDirs;
-  }
-  
-  /**
-   * Gets the flag determining to make monthly directories based on when the 
-   * pictures where taken
-   * 
-   * @return a flag indicating whether or not to create monthly directories 
-   *        based on when the pictures where taken
-   */
-  public boolean makeMonthlyDirectories()
-  {
-    return this.makeMonthlyDirs;
-  }
-  
-  
-  /**
-   * Sets the flag indicating whether or not to keep media files whose metadata
-   * could not be extracted
-   * 
-   * @param keepFailed flag indicating whether or not to keep media files whose 
-   *        metadata could not be extracted
-   */
-  public void keepFailedMedia( boolean keepFailed )
-  {
-    this.keepFailedMedia = keepFailed;
-  }
-  
-  /**
-   * Gets the flag indicating whether or not to keep media files whose metadata
-   * could not be extracted
-   * 
-   * @return a flag indicating whether or not to keep media files whose 
-   *        metadata could not be extracted
-   */
-  public boolean keepFailedMedia()
-  {
-    return this.keepFailedMedia;
-  }
-  
-  /**
-   * Gets the start index used to generate file names
-   * 
-   * @return the start index used to generate file names
-   */
-  public int getStartIndex()
-  {
-    return startIndex;
-  }
-
-  /**
-   * Sets the start index used to generate file names
-   * 
-   * @param startIndex the start index used to generate file names
-   */
-  public void setStartIndex(int startIndex)
-  {
-    if( startIndex >= 0 )
-    {
-      logger.info("Setting start index to " + startIndex);
-      this.startIndex = startIndex;
-    }
-    else
-    {
-      logger.info("Start Index cannot be negative, using default: 1");
-      this.startIndex = 1;
-    }
-  }
   /**
    * Process the given request based on the arguments.  If the merge directory 
    * is valid it merges all the files in the input and merge directory based on 
@@ -449,43 +136,51 @@ public class PhotoMerger
    * in the "approved" list then is added to the processing list.
    * 
    */
-  private void processRequest()
+  public void processRequest()
   {
     try
     {
       logger.debug("Processing Request");
-      ArrayList<PhotoItem> inItems = this.getPhotoItems(this.inputDir);
+      String inputDir = this.args.getInputDir();
+      String mergeDir = this.args.getMergeDir();
+      String prefix = this.args.getPrefix();
+      int startIndex = this.args.getStartIndex();
+          
+      ArrayList<PhotoItem> inItems = this.getPhotoItems(inputDir);
       // the merge directory is not set, so renaming files only
-      if( this.mergeDir == null && this.prefix != null )
+      if( mergeDir == null && prefix != null )
       {
-        String msg = "Renaming files using prefix " + this.prefix + 
-                     " and Index: "  + this.startIndex;
+        String msg = "Renaming files using prefix " + prefix + 
+                     " and Index: "  + startIndex;
         logger.info(msg);
         this.renameItems(inItems);
       }
-      else if( this.mergeDir != null )
+      else if( mergeDir != null )
       {
-        String msg = "Merging folders " + this.inputDir + " and " + this.mergeDir;
+        String msg = "Merging folders " + inputDir + " and " + mergeDir;
         logger.info(msg);;
-        ArrayList<PhotoItem> mergeItems = this.getPhotoItems(this.mergeDir);
+        ArrayList<PhotoItem> mergeItems = this.getPhotoItems(mergeDir);
         this.mergeItems(inItems, mergeItems);
       }
       
       //Create and set up the window.
       String title = this.failedExtr.size() + 
                       " Metadata extraction failed, used regular date in:";
-      if( !this.useLastModDate )
+      if( !this.args.isUseLastModDate() )
         title = "Metadata extraction failed, " + this.failedExtr.size() + " files skipped";
-
-      this.createAndShowSkippedFiles(title, this.failedExtr);
-      if( this.keepFailedMedia )
-      {
-        
-      }
-      if( this.avoidDups )
+      
+      if( this.args.isShowPopupWindows() )
+        this.createAndShowSkippedFiles(title, this.failedExtr);
+      
+      if( this.args.isRemoveDuplicates() && this.args.isShowPopupWindows())
       {
         title = this.dupFiles.size() +  " Duplicate Files Avoided";
         this.createAndShowSkippedFiles(title, this.dupFiles);
+      }
+      else
+      {
+        logger.info("Storing duplicates information in output folder");
+        
       }
 
     }
@@ -528,18 +223,23 @@ public class PhotoMerger
   {
     logger.info("Renaming " + inItems.size() + " Items");
     // If we need to remove duplicates, then do it before renaming files
-    if( this.avoidDups )
+    if( this.args.isRemoveDuplicates() )
       inItems = this.avoidDuplicates(inItems);
+    
+    int startIndex = this.args.getStartIndex();
+    String prefix = this.args.getPrefix();
+    String outputDir = this.args.getOutputDir();
+    boolean makeMonthlyDirs = this.args.isMakeMonthlyDirs();
     
     for(PhotoItem item: inItems)
     {
-      int nextIndex = this.startIndex++;
-      String name = this.outputDir + this.prefix + "_" + 
+      int nextIndex = startIndex++;
+      String name = outputDir + prefix + "_" + 
                     nextIndex + "." + item.getExtension();
       
-      if( this.makeMonthlyDirs )
+      if( makeMonthlyDirs )
       {
-        String path = this.outputDir + File.separator;
+        String path = outputDir + File.separator;
         Date taken = item.getDateTaken();
         
         if ( taken != null ) 
@@ -548,7 +248,7 @@ public class PhotoMerger
           path += "failed";
         
         Files.createDirectories(Paths.get(path));
-        name = path + File.separator + this.prefix + "_" + 
+        name = path + File.separator + prefix + "_" + 
             nextIndex + "." + item.getExtension();
         
       }
@@ -578,7 +278,7 @@ public class PhotoMerger
    */
   private List<PhotoItem> avoidDuplicates( List<PhotoItem> inItems )
   {
-    logger.debug("Removing duplicates from list with " + inItems.size() + " items" );
+    logger.info("Removing duplicates from list with " + inItems.size() + " items" );
     List<PhotoItem> listToRet = new ArrayList<>();
 
     for (PhotoItem item : inItems)
@@ -591,11 +291,12 @@ public class PhotoMerger
         PhotoItem in = listToRet.get(indx);
         String txt = "Files " + in.getFilename() + " and " + 
                      item.getFilename() + " might be duplicates";
+        logger.info(txt);
         this.dupFiles.add( txt );
       }
     }
     
-    logger.debug("Returning " + listToRet.size() + " items");
+    logger.info("Returning " + listToRet.size() + " items");
     return listToRet;
   }
   
@@ -624,22 +325,24 @@ public class PhotoMerger
         long size = file.length();
         
         String fname = file.getAbsolutePath();
-        logger.info("Testing file: " + fname);
+        String name = file.getName();
+        
+        logger.info("Processing file: " + fname);
         int end = fname.lastIndexOf('.');
         if ( end > 0 )
         {
           String ext = 
               fname.substring(end + 1, fname.length() ).toUpperCase();
-          logger.info("Looking for extension: " + ext);
+          logger.debug("Looking for extension: " + ext);
           try
           {
             
-            logger.info("Adding file to list");
+            logger.debug("Adding file to list");
             File metafile = new File(fname);
             
             Metadata metadata = 
                 ImageMetadataReader.readMetadata( metafile );
-            this.printMetadata(metadata);
+            //this.printMetadata(metadata);
             
             Directory directory = null;
             
@@ -667,18 +370,36 @@ public class PhotoMerger
             else
             {
               date = this.getDateTimeOriginal(file);
-              // if we were able to get the date or we are not skipping failed files
-              if (date != null || this.keepFailedMedia )
+              if( date != null )
+              {
                 items.add(new PhotoItem(fname, date, ext, size));
+              }
+              // if we were able to get the date or we are not skipping failed files
+              else if( this.args.isKeepFailed() )
+              {
+                logger.info("Could not get the date, but keeping the file: " + name );
+                items.add(new PhotoItem(fname, date, ext, size));
+              }
+              else
+                logger.warn("Skipping file " + name + " due to lack of date and time");
             }
           }
           catch (Exception e)
           {
             logger.warn("Error while processing: " + fname + ", ERROR: " + e.getMessage());
             date = this.getDateTimeOriginal(file);
-            // if we were able to get the date or we are not skipping failed files
-            if( date != null || this.keepFailedMedia )
+            if( date != null )
+            {
               items.add(new PhotoItem(fname, date, ext, size));
+            }
+            // if we were able to get the date or we are not skipping failed files
+            else if( this.args.isKeepFailed() )
+            {
+              logger.info("Could not get the date, but keeping the file: " + name );
+              items.add(new PhotoItem(fname, date, ext, size));
+            }
+            else
+              logger.warn("Skipping file " + name + " due to lack of date and time");
           }
         }
       }
@@ -689,23 +410,80 @@ public class PhotoMerger
     
     return items;
   }
-
-  private void printMetadata(Metadata metadata )
+  
+  /**
+   * Runs through the list of media files in the input directory and attempts
+   * to find all the files that might be duplicates.  Returns a list of String
+   * objects with the name of the files that might be duplicates using the 
+   * form:  The returned list contains a list of objects that might be 
+   * duplicates:
+   *      [
+   *        [FILEA, FILEB],
+   *        [FILEC, FILED]
+   *      ]
+   * In the case above FILEA and FILEB might be duplicates as well as FILEC and 
+   * FILED.
+   * 
+   * @return a list of file names that might be duplicate as stated above
+   */
+  public List<List<String>> findDuplicates()
   {
-    logger.debug("Priting Metadata");
-    for (Directory directory : metadata.getDirectories()) {
-      for (Tag tag : directory.getTags()) {
-        logger.debug(String.format("\t[%s] - [%s] = %s", directory.getName(), tag.getTagName(), tag.getDescription() ) );
-//          System.out.format("[%s] - %s = %s",
-//              directory.getName(), tag.getTagName(), tag.getDescription());
+    List<PhotoItem> items = this.getPhotoItems(this.args.getInputDir() );
+    
+    logger.info("Finding duplicates from list with " + items.size() + " items" );
+    List<PhotoItem> listOfItems = new ArrayList<>();
+    List<List<String>> dups = new ArrayList<>();
+    
+    for (PhotoItem item : items)
+    {
+      if( !listOfItems.contains(item) )
+        listOfItems.add(item);
+      else
+      {
+        int indx = listOfItems.indexOf(item);
+        PhotoItem in = listOfItems.get(indx);
+        List<String> match = new ArrayList<>();
+        match.add( in.getFilename() );
+        match.add( item.getFilename() );
+        String txt = "Files " + in.getFilename() + " and " + 
+                     item.getFilename() + " might be duplicates";
+        logger.info(txt);
+        dups.add( match );
       }
-      if (directory.hasErrors()) {
-          for (String error : directory.getErrors()) {
-              System.err.format("ERROR: %s", error);
-          }
+    }
+    
+    logger.info("Returning " + dups.size() + " items");
+    // let's sort the list before returning it
+    Collections.sort(dups, new SortByFirstElement() );
+    return dups;
+  }
+
+  /**
+   * Prints all the directories and tags contained as metadata in each media
+   * file
+   * 
+   * @param metadata the information from the media file to print
+   */
+  public void printMetadata(Metadata metadata )
+  {
+    logger.debug("Printing Metadata");
+    for (Directory directory : metadata.getDirectories()) 
+    {
+      for (Tag tag : directory.getTags()) 
+      {
+        logger.debug(String.format("\t[%s] - [%s] = %s", 
+            directory.getName(), tag.getTagName(), tag.getDescription() ) );
       }
+      if (directory.hasErrors()) 
+      {
+        for (String error : directory.getErrors()) 
+        {
+          logger.error("ERROR: " + error);
+        }
+      }
+    }
   }
-  }
+  
   /**
    * Last desperate attempt to get the creation date.  This is used when the 
    * metadata-extractor fails to get the date.  It first uses the ExifTool to
@@ -722,7 +500,7 @@ public class PhotoMerger
     Date date = null;
     try
     {
-      logger.info("Trying to use ExifTool to get date");
+      logger.info("Using ExifTool to get date for " + file.getName() );
       Map<ExifTool.Tag, String> map = 
         this.exifTool.getImageMeta(file, ExifTool.Tag.DATE_TIME_ORIGINAL);
       
@@ -740,13 +518,13 @@ public class PhotoMerger
       logger.error("Got an error " + e.getMessage());
     }
     
-    if (date == null && this.useLastModDate )
+    if (date == null && this.args.isUseLastModDate() )
     {
       date = new Date(file.lastModified());
       logger.info("Using Last Modified Date: " + date);
     }
     
-    if( date == null  && !this.keepFailedMedia )
+    if( date == null  && !this.args.isKeepFailed() )
     {
       String fname = file.getAbsolutePath();
       logger.info("Skipping file " + fname);
@@ -824,40 +602,50 @@ public class PhotoMerger
     frame.pack();
     frame.setVisible(true);
   }
-  
-  
-  
+ 
   /**
-   * Tests for the path and determines if it exists or not.  If is a valid path
-   * and is a directory it returns true otherwise it returns false.
+   * Sorts two lists of strings based only on the first element.
    * 
-   * @param path the path of the directory to test
-   * @return true if the path belongs to a valid directory
+   * @author Oscar E. Ganteaume
+   *
    */
-  private boolean testDirectory(String path)
+  class SortByFirstElement implements Comparator<List<String>>
   {
-    logger.debug("Testing Directory to " + path);
-    if( path == null )
-      return false;
-    
-    File file = new File(path);
-    if( file.isDirectory() )
-      return true;
-    else
-      return false;
+    /**
+     * Compares two lists and returns:
+     *   1: if the first element in a is greater than the first element in b
+     *   0: if the first element in a is equals to the first element in b
+     *  -1: if the first element in a is less than the first element in b
+     *  
+     * @return an integer determining if whether or not the first element in a
+     *         is the same, greater or equal to the first element in b
+     */
+    public int compare(List<String> a, List<String> b)
+    {
+      // lets first make sure we account for null lists
+      if( a != null && b == null ) {
+        return 1;
+      }
+      else if(a == null && b == null ) {
+        return 0;      
+      }
+      else if( a == null && b != null ) {
+        return -1;
+      }
+      
+      // now let's consider empty lists
+      if( !a.isEmpty() && b.isEmpty() ) {
+        return 1;
+      }
+      else if(a.isEmpty() && b.isEmpty() ) {
+        return 0;      
+      }
+      else if( a.isEmpty() && !b.isEmpty() ) {
+        return -1;
+      }
+      
+      return a.get(0).compareTo(b.get(0));
+    }
   }
   
-//  /**
-//   * Runs the show, this is used for test only
-//   * 
-//   * @param args
-//   */
-//  public static void main(String[] args)
-//  {
-//    
-//    new PhotoMerger("/home/oeg/1-img-test/dups", 
-//        "/home/oeg/1-img-test/out", 
-//        null, 
-//        1, "TST", Level.DEBUG);
-//  }
 }

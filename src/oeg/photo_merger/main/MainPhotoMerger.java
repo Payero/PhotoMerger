@@ -1,6 +1,11 @@
 package oeg.photo_merger.main;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.cli.HelpFormatter;
@@ -8,6 +13,7 @@ import org.apache.commons.cli.Options;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 
+import oeg.photo.runner.PhotoMergerArgs;
 import oeg.photo_merger.utils.PhotoMergerUtils;
 
 /**
@@ -35,89 +41,77 @@ public class MainPhotoMerger
    * Stores all the options that can be used by this application
    */
   private static Options options = new Options();
+  /**
+   * Stores the object doing the actual work
+   */
+  private PhotoMerger photoMerger = null;
   
   /**
    * Runs the application using all the arguments given by the user.  If all
    * the arguments are set properly it runs the command line.
    * 
-   * @param inputDir The name of the directory containing all the files to 
-   *        rename or merge
-   * @param outDir The name of the directory to place the files after renaming 
-   *        or merging them
-   * @param mergeDir The name of the directory containing all the files to 
-   *        merge
-   * @param startIndx The index number used when generating the name of the 
-   *        files
-   * @param prefix The prefix used when generating the name of the files
-   * @param lvl The verbosity level or amount of messages print to the screen
+   * @param args the object containing all the runtime configuration parameters
    * 
    */
-  public MainPhotoMerger(String inputDir, String outDir, String mergeDir, 
-                         int startIndx, String prefix, String lvl,
-                         boolean useLastMod, boolean remDups, boolean makeDirs,
-                         boolean keepFailed)
+  public MainPhotoMerger(PhotoMergerArgs args)
   {
-    String name = MainPhotoMerger.class.getName();
-    Level level = Level.getLevel("INFO");
-    if( lvl != null)
+    if( args.getVerbosityLevel() != null)
     {
-      logger = PhotoMergerUtils.getLogger(name, Level.getLevel(lvl) );
-      level = Level.getLevel(lvl);
+      logger = PhotoMergerUtils.getLogger("MainPhotoMerger", 
+          args.getVerbosityLevel() );
     }
     else
-      logger = PhotoMergerUtils.getLogger(name);
+      logger = PhotoMergerUtils.getLogger("MainPhotoMerger");
     
-    // Making sure the inputDirectory is valid
-    if( inputDir == null )
-      inputDir = System.getProperty("user.dir");
-    
-    File f = new File(inputDir);
+    this.photoMerger = new PhotoMerger( args );
+  }
+  
+  public void submitProcessRequest()
+  {
+    this.photoMerger.processRequest();
+  }
+  
+  public void findDuplicatesOnly()
+  {
+    List<List<String>> dups = this.photoMerger.findDuplicates();
+    PhotoMergerArgs args = this.photoMerger.getPhotoMergerArguments();
+    String inDir = args.getInputDir();
+    String outDir = args.getOutputDir();
+    BufferedWriter writer = null;
     try
     {
-      if ( !f.isDirectory() )
+      File inFile = new File(inDir);
+      File outFile = new File(outDir);
+      String name = inFile.getName();
+      String full = outFile.getAbsolutePath() + 
+          File.separator + name + "_duplicates.txt";
+      logger.info("Creating duplicates file: " + full);
+      writer = new BufferedWriter(new FileWriter(full) );
+      for( List<String> dup : dups )
       {
-        System.err.println("The input directory is invalid");
-        System.exit(-1);
-      }
+        writer.write(String.format("%s\n", dup.toString() ) );
+      }  
+      logger.info("Done writing " + dups.size() + " duplicates");
+      
     }
     catch( Exception e )
     {
-      throw new RuntimeException(e);
+      logger.error("Got an exception when writing duplicates: " + e.getMessage() );
     }
-    
-    // checking for the output directory
-    if( outDir == null )
-      outDir = inputDir;
-    else
+    finally
     {
-      f = new File(outDir);
       try
       {
-        if ( !f.isDirectory() )
-        {
-          System.err.println("The output directory is invalid");
-          System.exit(-1);
-        }
+        writer.close();
       }
-      catch( Exception e )
+      catch (Exception e2)
       {
-        throw new RuntimeException(e);
+        logger.warn("Got an exception when closing writer");
       }
+      
+      
     }
-    // making sure we have a valid start index
-    if( startIndx < 0 )
-    {
-      System.err.println("The start index needs to be a positive number");
-      System.exit(-1);
-    }
-    // making sure we have a valid prefix
-    if( prefix == null )
-    {
-      System.err.println("The prefix is invalid");
-      System.exit(-1);
-    }
-    new PhotoMerger(inputDir, outDir, mergeDir, startIndx, prefix, level, 
-        useLastMod, remDups, makeDirs, keepFailed );
+    
   }
   
   /**
@@ -142,17 +136,30 @@ public class MainPhotoMerger
    */
   public static void main(String[] args)
   {
-    Map<String, String> map = PhotoMergerUtils.parseCommandLineArgs(args);
+    List<String> clean_args = new ArrayList<>();
+    boolean dups_only = false;
+    for( String arg : args )
+    {
+      if( arg.equals("-F") || arg.equalsIgnoreCase("--find-duplicates-only") )
+      {
+        System.err.println("Asking to find duplicates only");
+        dups_only = true;
+      }
+      else
+      {
+        clean_args.add(arg);
+      }
+    }
     
-    new MainPhotoMerger( map.get("input-dir"), 
-                         map.get("output-dir"), 
-                         map.get("merge-dir"), 
-                         Integer.parseInt(map.get("start-index")), 
-                         map.get("prefix"), 
-                         map.get("debug-level"),
-                         Boolean.parseBoolean(map.get("use-last-mod-date")),
-                         Boolean.parseBoolean(map.get("remove-duplicates")),
-                         Boolean.parseBoolean(map.get("make-monthly-dirs")),
-                         Boolean.parseBoolean(map.get("keep-failed")));
+    PhotoMergerArgs photoArgs = 
+        PhotoMergerUtils.parseCommandLineArgs(clean_args.toArray(new String[0] ));
+    
+    MainPhotoMerger main = new MainPhotoMerger( photoArgs );
+    if( dups_only )
+    {
+      main.findDuplicatesOnly();
+    }
+    else
+      main.submitProcessRequest();
   }
 }

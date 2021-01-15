@@ -3,7 +3,8 @@
 classes
 
 build/
-lib/photo-merger.jar
+lib/photo-merger-CLI.jar
+lib/photo-merger-GUI.jar
 logs
 
 data/test/out

@@ -6,9 +6,7 @@ import java.io.FileFilter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,22 +23,19 @@ public class PhotoRunner
   
   private List<File> files = new ArrayList<>();
   
-  public PhotoRunner(Map<String, String> map)
+  public PhotoRunner(PhotoMergerArgs args)
   {
     
     this.logger.debug("Ok, I got this");
     
     try
     {
-      map.forEach((k, v) -> {
-        this.logger.info("Config[" + k + "] = " + v);
-      });
-      
-      String inName = map.get("input-dir");
+      this.logger.info("Config " + args.toString() );
+      String inName = args.getInputDir();
       
       if( this.populateFiles( inName ) ) 
       {
-        String outName = map.get("output-dir");
+        String outName = args.getOutputDir();
         if( outName == null ) {
           outName = inName + File.separator + "mod";
           this.logger.warn("The output directory was not specified, using " + outName );
@@ -50,13 +45,9 @@ public class PhotoRunner
         if( !out.isDirectory() ) {
           out.mkdirs();
         }
-        int start = Integer.parseInt( map.get("start-index") );
-        String prefix = map.get("prefix");
-        this.logger.debug("Using last mod date? " + map.get("use-last-mod-date")  );
-        boolean useLastMod = Boolean.parseBoolean(map.get("use-last-mod-date") );
+        this.logger.debug("Using last mod date? " + args.isUseLastModDate()  );
+        boolean useLastMod = args.isUseLastModDate();
         this.logger.debug("Using last mod date? " + useLastMod  );
-        boolean remDups = Boolean.parseBoolean(map.get("rem-duplcates") );
-        boolean makeDirs = Boolean.parseBoolean(map.get("make-dirs") );
         
         
         for( File file : this.files ) 
@@ -64,10 +55,8 @@ public class PhotoRunner
           this.logger.info("Processing Directory: " + file.getAbsolutePath() );
           String path = outName + File.separator + file.getName();
           this.logger.debug("Output Dir: " + path);
-          
-          new PhotoMerger(file.getAbsolutePath(), path, null, start, prefix, Level.DEBUG,
-              useLastMod, remDups, makeDirs, false);
-          
+          PhotoMerger pm = new PhotoMerger(args);
+          pm.processRequest();
         }
       }
       
@@ -116,8 +105,8 @@ public class PhotoRunner
   
   public static void main(String[] args)
   {
-    Map<String, String> map = PhotoRunnerUtils.parseCommandLineArgs(args);
+    PhotoMergerArgs photoArgs = PhotoRunnerUtils.parseCommandLineArgs(args);
     
-    new PhotoRunner(map);
+    new PhotoRunner(photoArgs);
   }
 }

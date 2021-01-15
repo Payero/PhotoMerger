@@ -163,13 +163,21 @@
       </unzip>
   </target>
 
-  <!-- Generates the distro package for the ccdp-engine -->
-  <target name="create.jar" depends="clean,compile, unjar_dependencies" 
-  	      description="Creates the photo-merger distribution package">
+  <!-- Generates the distro packages for PhotoMerger -->
+  <target name="create.jars" depends="clean,compile, unjar_dependencies" 
+  	      description="Creates the photo-merger distribution packages">
   	<mkdir dir="${release.dir}" />  	
+  	<antcall target="create.gui.jar" />
+  	<antcall target="create.cli.jar" />
   	
+  </target>
+
+	<!-- Generates the distro package for PhotoMerger GUI -->
+  <target name="create.gui.jar" 
+          description="Creates the photo-merger-gui distribution package">
+    
   	<jar  basedir="${target.dir}"
-          destfile="${release.dir}/${base.name}.jar" >
+          destfile="${release.dir}/${base.name}-GUI.jar" >
       <manifest>
         <attribute name="Main-Class" 
                    value="oeg.photo_merger.gui.PhotoGUI"/>
@@ -177,19 +185,44 @@
                    value="./cls/" />
 
       </manifest>
-      <fileset dir="${cfg.dir}" includes="*.properties" />
-    	<fileset dir="${target.dir}" excludes="META-INF/*" />
+      <fileset dir="${cfg.dir}" includes="*.xml" />
+      <fileset dir="${target.dir}" excludes="META-INF/*" />
 
       <!-- <zipgroupfileset dir="${lib.dir}" includes="*.jar" excludes="META-INF/*"/> -->
     </jar>
 
-    <chmod file="${release.dir}/${base.name}.jar" perm="a+x"/>
+    <chmod file="${release.dir}/${base.name}-GUI.jar" perm="a+x"/>
 
   </target>
 
+	 <!-- Generates the distro package for PhotoMerger CLI -->
+	  <target name="create.cli.jar"  
+	          description="Creates the photo-merger-cli distribution package">
+	    
+	    <jar  basedir="${target.dir}"
+	          destfile="${release.dir}/${base.name}-CLI.jar" >
+	      <manifest>
+	        <attribute name="Main-Class" 
+	                   value="oeg.photo_merger.main.MainPhotoMerger"/>
+	        <attribute name="Class-Path" 
+	                   value="./cls/" />
+
+	      </manifest>
+	      <fileset dir="${cfg.dir}" includes="*.xml" />
+	      <fileset dir="${target.dir}" excludes="META-INF/*" />
+
+	      <!-- <zipgroupfileset dir="${lib.dir}" includes="*.jar" excludes="META-INF/*"/> -->
+	    </jar>
+
+	    <chmod file="${release.dir}/${base.name}-CLI.jar" perm="a+x"/>
+
+	  </target>
+	
+      	
 
 	<target name="clean" description="clean up">
-		<delete file="${release.dir}/${base.name}.jar" />
+		<delete file="${release.dir}/${base.name}-GUI.jar" />
+    <delete file="${release.dir}/${base.name}-CLI.jar" />
     <delete dir="${build.dir}" />
    	<delete dir="${doc.dir}" />
 		<delete dir="${report.dir}" />
@@ -212,7 +245,7 @@
 
 
 <!-- Default, run this -->
-<target name="main" depends="clean,compile,create.jar" 
+<target name="main" depends="clean,compile,create.jars" 
         description="Runs all the targets" />
 
 
