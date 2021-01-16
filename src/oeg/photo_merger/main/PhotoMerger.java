@@ -110,7 +110,7 @@ public class PhotoMerger
     if( args == null )
       throw new IllegalArgumentException("The arguments cannot be null");
     logger = 
-        PhotoMergerUtils.getLogger("PhotoMerger", args.getVerbosityLevel() );
+        PhotoMergerUtils.getLogger(args.getVerbosityLevel() );
     this.args = args;
     PhotoMerger.FILESIZE_PERCENT_TOLERANCE = this.args.getTolerance();
   }
@@ -234,7 +234,7 @@ public class PhotoMerger
     for(PhotoItem item: inItems)
     {
       int nextIndex = startIndex++;
-      String name = outputDir + prefix + "_" + 
+      String name = outputDir + File.separator + prefix + "_" + 
                     nextIndex + "." + item.getExtension();
       
       if( makeMonthlyDirs )

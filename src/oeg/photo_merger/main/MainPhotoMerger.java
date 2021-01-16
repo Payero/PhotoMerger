@@ -57,11 +57,10 @@ public class MainPhotoMerger
   {
     if( args.getVerbosityLevel() != null)
     {
-      logger = PhotoMergerUtils.getLogger("MainPhotoMerger", 
-          args.getVerbosityLevel() );
+      logger = PhotoMergerUtils.getLogger( args.getVerbosityLevel() );
     }
     else
-      logger = PhotoMergerUtils.getLogger("MainPhotoMerger");
+      logger = PhotoMergerUtils.getLogger();
     
     this.photoMerger = new PhotoMerger( args );
   }
@@ -138,6 +137,7 @@ public class MainPhotoMerger
   {
     List<String> clean_args = new ArrayList<>();
     boolean dups_only = false;
+    boolean show_help = false;
     for( String arg : args )
     {
       if( arg.equals("-F") || arg.equalsIgnoreCase("--find-duplicates-only") )
@@ -147,13 +147,21 @@ public class MainPhotoMerger
       }
       else
       {
+        if( arg.equals("-h") || arg.equals("--help") )
+          show_help = true;
+        
         clean_args.add(arg);
       }
     }
     
     PhotoMergerArgs photoArgs = 
         PhotoMergerUtils.parseCommandLineArgs(clean_args.toArray(new String[0] ));
-    
+    if( photoArgs == null ) {
+      if( show_help )
+        System.out.println(" -F,--find-duplicates-only     Searches for duplicates only");
+      System.exit(0);
+    }
+      
     MainPhotoMerger main = new MainPhotoMerger( photoArgs );
     if( dups_only )
     {

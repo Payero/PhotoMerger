@@ -98,7 +98,6 @@ public class PhotoGUI extends JFrame
         {
           PhotoMergerArgs photoArgs = 
               PhotoMergerUtils.parseCommandLineArgs(finalArgs);
-          
           PhotoGUI frame = new PhotoGUI(photoArgs);
           frame.setVisible(true);
         }

@@ -25,7 +25,7 @@ public class QuickTest
   
   public QuickTest()
   {
-    this.logger = PhotoMergerUtils.getLogger("QuickTest", Level.DEBUG);
+    this.logger = PhotoMergerUtils.getLogger(Level.DEBUG);
     
     this.logger.debug("Running Quick Test");
     List<List<String>> dups = new ArrayList<>();

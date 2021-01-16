@@ -67,6 +67,7 @@ public class PhotoMergerUtils
    * Stores the object responsible for sending messages to the handlers
    */
   private static Logger logger = null;
+//  private static RootLoggerComponentBuilder rootLogger = null;
   
   private static ConfigurationBuilder<BuiltConfiguration> builder = 
       ConfigurationBuilderFactory.newConfigurationBuilder();
@@ -131,21 +132,20 @@ public class PhotoMergerUtils
    */
   public static Logger getLogger()
   {
-    return PhotoMergerUtils.getLogger("PhotoMerger");
+    return PhotoMergerUtils.getLogger(Level.INFO);
   }
 
-  /**
-   * Generates a new Logger object using the given Level verbosity level and
-   * the given handler handler
-   * 
-   * @return a logger object responsible for depicting messages to the handlers
-   */
-  public static Logger getLogger( String name )
-  {
-    return PhotoMergerUtils.getLogger(name, PhotoMergerUtils.LEVEL);
-  }
+//  /**
+//   * Generates a new Logger object using the given Level verbosity level and
+//   * the given handler handler
+//   * 
+//   * @return a logger object responsible for depicting messages to the handlers
+//   */
+//  public static Logger getLogger( String name )
+//  {
+//    return PhotoMergerUtils.getLogger(name, PhotoMergerUtils.LEVEL);
+//  }
 
-  
   
   /**
    * Generates a new Logger object using the given Level verbosity level and
@@ -156,12 +156,11 @@ public class PhotoMergerUtils
    * 
    * @return a logger object responsible for depicting messages to the handlers
    */
-  public static Logger getLogger(String name , Level level)
+  public static Logger getLogger(Level level)
   {
     PhotoMergerUtils.LEVEL = level;
-    
     if( logger == null )
-    {
+    {  
       LayoutComponentBuilder standard = builder.newLayout("PatternLayout");
       standard.addAttribute("pattern", "%d{HH:mm:ss.SSS} [%-6p] (%F:%L).%M – %m%n");
 
@@ -173,15 +172,15 @@ public class PhotoMergerUtils
       RootLoggerComponentBuilder rootLogger = builder.newRootLogger(Level.WARN);
       rootLogger.add(builder.newAppenderRef("stdout"));
       builder.add(rootLogger);
-      
-      LoggerComponentBuilder loggerBldr = builder.newLogger(name, level);
+    
+      LoggerComponentBuilder loggerBldr = builder.newLogger("PhotoMerger", level);
       loggerBldr.add(builder.newAppenderRef("stdout"));
       loggerBldr.addAttribute("additivity", false);
       builder.add(loggerBldr);
       
       Configurator.initialize(builder.build());
-      
-      logger = LogManager.getLogger(name);
+    
+      logger = LogManager.getLogger("PhotoMerger");
       logger.atLevel(level);
     }
     
@@ -381,7 +380,6 @@ public class PhotoMergerUtils
       {
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp("MainPhotoMerger", options);
-        System.exit(0);
       } 
       else
       {

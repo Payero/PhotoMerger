@@ -1,10 +1,8 @@
 package oeg.photo.runner;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Level;
 
 import oeg.photo_merger.main.PhotoMerger;
-import oeg.photo_merger.utils.PhotoMergerUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,8 +46,6 @@ public class PhotoMergerArgs
   private boolean showPopupWindows = false;
   private double tolerance = PhotoMerger.FILESIZE_PERCENT_TOLERANCE;
   
-  private Logger logger = null;
-  
   
   /**
    * Instantiates a new object using the contents of a properties file.
@@ -70,9 +66,6 @@ public class PhotoMergerArgs
    */
   public PhotoMergerArgs(File propsFile)
   {
-    this.logger = PhotoMergerUtils.getLogger("PhotoArgs", ARGS_LEVEL);
-    this.logger.debug("Creating Arguments using a configuration file");
-    
     Properties props = new Properties();
     FileInputStream fis = null;
 
@@ -85,6 +78,7 @@ public class PhotoMergerArgs
     {
       e.printStackTrace();
     }
+    
     this.setInputDir(props.getProperty(KEY_IN_DIR) );
     this.setOutputDir(props.getProperty(KEY_OUT_DIR) );
     this.setMergeDir(props.getProperty(KEY_MERGE_DIR) );
@@ -112,9 +106,9 @@ public class PhotoMergerArgs
 
     if (props.getProperty(KEY_SHOW_WINDOWS) != null)
       this.setShowPopupWindows( props.getProperty(KEY_SHOW_WINDOWS).trim() );
-
+    
     if (props.getProperty(KEY_VERB_LEVEL) != null)
-      this.setVerbosityLevel( props.getProperty(KEY_VERB_LEVEL).trim() );
+      this.setVerbosityLevel( props.getProperty(KEY_VERB_LEVEL).trim() );    
   }
   
   /**
@@ -125,8 +119,6 @@ public class PhotoMergerArgs
    */
   public PhotoMergerArgs(Map<String, String> arguments)
   {
-    this.logger = PhotoMergerUtils.getLogger("PhotoArgs", ARGS_LEVEL);
-    this.logger.debug("Creating Arguments using a map");
     
     // first lets do all the ones that are required
     if( arguments.containsKey(PhotoMergerArgs.KEY_IN_DIR) )
@@ -166,6 +158,7 @@ public class PhotoMergerArgs
 
     if( arguments.containsKey(PhotoMergerArgs.KEY_VERB_LEVEL) )
       this.setVerbosityLevel(arguments.get(PhotoMergerArgs.KEY_VERB_LEVEL));
+
     
   }
   
@@ -226,9 +219,6 @@ public class PhotoMergerArgs
   public PhotoMergerArgs(String inputDir, String outputDir, 
       String mergeDir, String prefix, int startIndex)
   {
-    this.logger = PhotoMergerUtils.getLogger("PhotoArgs", ARGS_LEVEL);
-    this.logger.debug("Creating Arguments using arguments");
-    
     this.setInputDir(inputDir);
     this.setOutputDir(outputDir);
     this.setMergeDir(mergeDir);
@@ -259,8 +249,6 @@ public class PhotoMergerArgs
    */
   public void setInputDir(String inputDir)
   {
-    this.logger.debug("Setting the Input Directory to " + inputDir);
-    
     if( inputDir == null )
       throw new IllegalArgumentException("The input directory cannot be null");
     
@@ -297,7 +285,6 @@ public class PhotoMergerArgs
    */
   public void setMergeDir(String mergeDir)
   {
-    this.logger.debug("Setting the merge directory to " + mergeDir);
     if( mergeDir != null )
     {
       File file = new File(mergeDir);
@@ -334,8 +321,6 @@ public class PhotoMergerArgs
    */
   public void setOutputDir(String outputDir)
   {
-    this.logger.debug("Setting the output Directory to " + outputDir);
-    
     if( outputDir == null )
       throw new IllegalArgumentException("The output directory cannot be null");
     
@@ -377,8 +362,6 @@ public class PhotoMergerArgs
    */
   public void setPrefix(String prefix)
   {
-    this.logger.debug("Setting prefix to " + prefix);
-    
     if( prefix == null )
       throw new IllegalArgumentException("The prefix cannot be null");
     
@@ -403,8 +386,6 @@ public class PhotoMergerArgs
    */
   public void setStartIndex(int startIndex)
   {
-    this.logger.debug("Setting the start index to " + startIndex);
-    
     this.startIndex = startIndex;
   }
 
@@ -444,7 +425,6 @@ public class PhotoMergerArgs
    */
   public void setVerbosityLevel(Level level)
   {
-    this.logger.debug("Setting verbosity to " + level);
     this.verbosityLevel = level;
   }
 
@@ -666,7 +646,6 @@ public class PhotoMergerArgs
    */
   public void setTolerance(double tolerance)
   {
-    this.logger.debug("Setting tolerance to " + tolerance);
     if( tolerance < 0 || tolerance > 1 )
     {
       String msg = String.format("The tolerance has to be between 0 and 1 not %f", tolerance);
